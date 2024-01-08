@@ -12,11 +12,10 @@ def splitMidi(sourceDir, splitDir=SPLIT_DIR):
 
     for f in os.listdir(sourceDir):
         if f.endswith(".mid"):
-            totalMidi += 1
             try:
                 utils.splitMidiFileByBarSteps(f"{sourceDir}/{f}", splitDir, 2)
-                print(f"Split {f}")
+                totalMidi += 1
             except Exception as e:
                 print(f"Error splitting {f}: {e}")
-            splitErrors += 1
-    print(f"Split {totalMidi - splitErrors} files, {splitErrors} errors occurred. ")
+                splitErrors += 1
+    print(f"Split {totalMidi} files, {splitErrors} errors occurred. ")
