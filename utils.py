@@ -38,7 +38,7 @@ def separateMidiFileByPitches(sourcePath, separationName, pitches):
     mid = mido.MidiFile(sourcePath)
     track = mid.tracks[0]
 
-    newTrack = helpers.separateIntoPitches(track, pitches)
+    newTrack = helpers.getTrackWithSelectPitches(track, pitches)
 
     fileName = sourcePath.split("/")[-1] # get filename from path
     fileName = fileName.split(".")[0] # remove extension

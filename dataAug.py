@@ -1,143 +1,117 @@
-from collections import Counter
 from constants import *
+from augExamples import AugExamplesRetriever, AugExample
 
 import helpers
 import mido
 import os
 import random
 
+DEBUG = True
 
-NUM_TRANSFORMATIONS = 7
-REPLACEMENT_DIST = {
-    "kick" : 0.6,
-    "sna" : 0.5,
-    "cym" : 1.0,
-    "tom" : 0.6,
-}
-
-def augmentationScheme(sourceDir, outputDir, partsToProbablyReplace = None, numReplacements=1):
+def augmentationScheme(sourceDir, outputDir, examplesDir, styleParams, numTranformations = 3, fixedPartsToReplace = None, numReplacements=1):
     """
     For every midi file in sourceDir, computes NUM_TRANSFORMATIONS transformed midi files
-    and saves them in the outputDir. Note: we also write the unaltered file to the outputDir
+    and saves them in the outputDir. 
+    Note: we also write the original file to the outputDir
 
     param
     sourceDir: dir that contains files to transform
     outputDir: dir that will contain transformations + unaltered files
-    numReplacements: only needed if partsToProbablyReplace == None; aka 
-    if we're going to randomly determine the partsToProbablyReplace for each transformation.
-    If so, indicates the number of percussion parts that are going to be randomly replaced.
-    partsToProbablyReplace: If specified, denotes the exact percussion parts that might be
-    replaced per transformation. Randomly computed otherwise.
-
-    We say partsToProbablyReplace because for each part, we denote a probability of replacement
-    with the REPLACEMENT_DIST. Ex: if partsToProbablyReplace = ["kick", "cym"], there's still a chance that
-    we don't actually replace "kick" but we do replace "cym"
+    numTranformations: number of transformations to compute for each midi file, not including the original
+    fixedPartsToReplace: If specified, denotes the exact percussion parts that will be replaced. Else,
+    parts to replace will be randomly computed.
+    numReplacements: If fixedPartsToReplace is not specified, then this denotes the number of 
+    randomly chosen parts to replace. Else, this parameter is ignored.
+    styleParams: keys are "preferredStyle" and "outOfStyleProb". 
     """
 
-    fixedPartsToProbablyReplace = partsToProbablyReplace != None
-    print(fixedPartsToProbablyReplace)
+    augExamplesRetriever = AugExamplesRetriever(dir=examplesDir)
     for f in os.listdir(sourceDir):
         # Skip non-midi files
         if ".mid" not in f:
             continue
         mid = mido.MidiFile(f'{sourceDir}/{f}')
         mid.save(f"{outputDir}/{f}_original.mid")
-        for i in range(NUM_TRANSFORMATIONS):
-            if not fixedPartsToProbablyReplace:
-                partsToProbablyReplace = random.sample(PERC_PARTS, numReplacements)
-            
-            partsToReplace = []
-            for part in partsToProbablyReplace:
-                willReplace = random.random() <= REPLACEMENT_DIST[part]
-                if willReplace:
-                    partsToReplace.append(part)
-            
-            newMid = transformMidiFile(mid, partsToReplace)
-            newMid.save(f"{outputDir}/{f}_transformed_{i:03d}.mid")
+        for i in range(numTranformations):
+            partsToReplace = getPartsToReplace(fixedPartsToReplace, numReplacements)
 
-def transformMidiFile(mid: mido.MidiFile, partsToReplace: list) -> mido.MidiFile:
+            newMid = transformMidiFile(mid, partsToReplace, augExamplesRetriever, styleParams)
+            newMid.save(f"{outputDir}/{f}_transf-{i:03d}.mid")
+
+def transformMidiFile(mid: mido.MidiFile, partsToReplace: list, augExamplesRetriever: AugExamplesRetriever, styleParams: dict) -> mido.MidiFile:
     """
-    Transforms a midi file by replacing parts with random examples
+    Transforms a midi file by probably replacing the specified parts with parts from the same style;
+    otherwise replaces with parts from a different style.
 
     params
     mid: Original midifile
     partsToReplace: strings denoting the parts that should be replaced
+    augExamplesRetriever: object to facilitate choosing replacement tracks
+    styleParams: keys are "preferredStyle" and "outOfStyleProb". 
 
     returns
     transformedMid: transformed midiFile
     """
-    track = mid.tracks[0]
 
-    # delete parts from original track
+    print(f"Transforming midi file {mid.filename} with parts: {partsToReplace}, preferredStyle: {styleParams['preferredStyle']}, outOfStyleProb: {styleParams['outOfStyleProb']}")
+
+    track = mid.tracks[0]
+    preferredStyle = styleParams["preferredStyle"]
+    outOfStyleProb = styleParams["outOfStyleProb"]
+
+    if preferredStyle == "":
+        preferredStyle = random.choice(augExamplesRetriever.styles)
+
+    # delete parts to replace from original track
     pitchesToDelete = []
     for p in partsToReplace:
-        pitchesToDelete.extend(getPitches(p))
+        pitchesToDelete.extend(helpers.getPitches(p))
     track = helpers.deletePitches(track, pitchesToDelete)
 
     # determine tracksToMerge
     tracksToMerge = [track]
     for p in partsToReplace:
-        tracksToMerge.append(getRandomReplacementTrack(p, EXAMPLES_DIR))
+        tracksToMerge.append(getReplacementTrack(p, preferredStyle, outOfStyleProb, augExamplesRetriever))
     
     # actually merge tracks
-    newTrack = helpers.mergehelpersltipleTracks(tracksToMerge)
+    newTrack = helpers.mergeMultipleTracks(tracksToMerge)
     
     # Construct transformed midi file
     transformedMid = mido.MidiFile(ticks_per_beat=mid.ticks_per_beat)
     transformedMid.tracks.append(newTrack)
+    
+    print(f"Transformation done!")
     return transformedMid
+
+def getReplacementTrack(percPart: str, preferredStyle: str, outOfStyleProb: int, augExamplesRetriever: AugExamplesRetriever) -> mido.MidiTrack:
+    """
+    Gets a replacement part (midi track) using the augExamplesRetriever.
+    With a probability of (1-outOfStyleProb), the replacement part will be from the given style.
+    Note that we don't care if the replacement part is empty or not.
+
+    params
+    percPart: string denoting the part to replace
+    preferredStyle: style of the replacement part
+    outOfStyleProb: probability that the replacement part will be from a different style
+    augExamplesRetriever: object to facilitate choosing replacement tracks
+    """
+
+    # ensure style is valid
+    if preferredStyle not in augExamplesRetriever.styles:
+        raise Exception(f"Style {preferredStyle} not found in augExamplesRetriever")
     
-def getRandomReplacementTrack(percPart: str, replacementDir: str) -> mido.MidiTrack:
-    """
-    Gets a random replacement track for the specified percPart from replacementDir
-    """
-    files = [f for f in os.listdir(replacementDir) if (".mid" in f) and (f.split("_")[0] == percPart)]
-    if files == []:
-        raise Exception(f'No replacement tracks of part {percPart} found at directory {replacementDir}')
-    randomIndex = random.randint(0, len(files)-1)
-    mid = mido.MidiFile(f"{replacementDir}/{files[randomIndex]}")
-    # print(f"Picked {files[randomIndex]} as replacement for percPart {percPart}")
-    return mid.tracks[0]
+    r = random.random()
+    # determine if we will use an out of style replacement
+    if r > outOfStyleProb:
+        candidates = augExamplesRetriever.getExamplesByStyle(preferredStyle)
+    else:
+        candidates = augExamplesRetriever.getExamplesOutOfStyle(preferredStyle)
 
-def getPitches(percPart: str) -> list:
-    """
-    Returns a list of pitches that correspond to the given percPart
-    Hardcoded.
-    """
-    if percPart == "sna":
-        return SNA_NOTES
-    if percPart == "toms":
-        return TOM_NOTES
-    if percPart == "kick":
-        return KICK_NOTES
-    if percPart == "cym":
-        return CYM_NOTES
-    return []
-
-def concatenateMidiFiles(sourceDir: str, outputDir: str):
-    """
-    Concatenates all midi files in midiDir into a single midi file
-    """
-    files = [f for f in os.listdir(sourceDir) if ".mid" in f]
-    firstMid = mido.MidiFile(f"{sourceDir}/{files[0]}")
-    concatTrack = helpers.getBeginningMetaData(firstMid.tracks[0])
-    for f in files:
-        mid = mido.MidiFile(f"{sourceDir}/{f}")
-        concatTrack = helpers.concatenateTracks(concatTrack, mid.tracks[0])
-    concatTrack.append(mido.MetaMessage('end_of_track'))
+    assert len(candidates) > 0, f"No examples found for style {preferredStyle}"
     
-    newMid = mido.MidiFile(ticks_per_beat=firstMid.ticks_per_beat)
-    newMid.tracks.append(concatTrack)
-    newMid.save(f"{outputDir}/concatenated.mid")
+    # choose a random example from the list of candidates
+    replacementExample = random.choice(candidates)
+    return replacementExample.getPart(percPart)
 
-def getNumExamplesPerPercPart(dir) -> dict:
-    d = Counter()
-    for f in os.listdir(dir):
-        percPart = f.split("_")[0]
-        if percPart in PERC_PARTS:
-            d[percPart] += 1
-    return dict(d)
-
-if __name__ == '__main__':
-    augmentationScheme(DATA_AUG_SOURCE_DIR, DATA_AUG_OUTPUT_DIR, numReplacements=2)
-    concatenateMidiFiles(DATA_AUG_OUTPUT_DIR, DATA_AUG_OUTPUT_DIR)
+def getPartsToReplace(fixedPartsToReplace, numReplacements):
+    return fixedPartsToReplace if fixedPartsToReplace != None else random.sample(PERC_PARTS, numReplacements)

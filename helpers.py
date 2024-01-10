@@ -2,6 +2,7 @@ from constants import *
 
 import math
 import mido
+import os
 
 def splitMidiTrackIntoBars(track: mido.MidiTrack, barStep: int, beatsPerBar: int,  ticksPerBeat: int):
     metaData = getBeginningMetaData(track)
@@ -16,19 +17,6 @@ def splitMidiTrackIntoBars(track: mido.MidiTrack, barStep: int, beatsPerBar: int
         midiSlicesTracks.append(midiSliceTrack)
     
     return midiSlicesTracks
-
-
-def getTotalSlices(track: mido.MidiTrack, barStep: int, beatsPerBar: int,  ticksPerBeat: int):
-    """
-    Returns the number of slices in a midi track.
-    Ex: if barstep is 1, and there are four bars in the midi track, then this function returns 4
-    """
-    absTime = 0
-    for m in track:
-        absTime += m.time
-    sliceLen = ticksPerBeat * barStep * beatsPerBar
-    return math.ceil(absTime / sliceLen)
-
 
 def getMidiSlice(track: mido.MidiTrack, startTime: int, endTime, metaData: list = []):
     """Extracts midi events from startTime to endTime into a new track
@@ -146,11 +134,10 @@ def getMidiSlice(track: mido.MidiTrack, startTime: int, endTime, metaData: list 
     closeMidiTrack(newTrack)
     return newTrack
 
-def separateIntoPitches(track: mido.MidiTrack, pitches: list):
+def getTrackWithSelectPitches(track: mido.MidiTrack, pitches: list):
     """
-    Separates a midi track into a new track containing only the specified pitches
+    Returns a midi track that containing only the specified pitches of the original track
     """
-
     # initialize a new track with meta data
     newTrack = mido.MidiTrack()
     newTrack.extend(getBeginningMetaData(track))
@@ -175,7 +162,7 @@ def deletePitches(track: mido.MidiTrack, pitches: list):
     Deletes all messages with the specified pitches from the track
     """
     pitchesToKeep = [x for x in range(128) if x not in pitches]
-    return separateIntoPitches(track, pitchesToKeep)
+    return getTrackWithSelectPitches(track, pitchesToKeep)
 
 def change_midi_tempo(midi_file_path, new_tempo):
     # Load the MIDI file
@@ -218,16 +205,23 @@ def getTrackWithoutBeginningMetaData(track: mido.MidiTrack):
         i += 1
     return track[i:]
 
-def mergeTracks(trackA, trackB):
-    def processTrack(track, collectMeta):
+def mergeTracks(track1, track2):
+    """
+    Merge two midi tracks; aka combines the messages of both tracks into a single track.
+    Keeps track1's metadata
+    """
+    def getMidiMessages(track, withMetaData):
+        """
+        returns the midi messages of a track as a list of tuples (absoluteTime, message)
+        """
         absoluteTime = 0
         trackEvents = []
         for msg in track:
             if isinstance(msg, mido.MetaMessage):
-                if collectMeta:
+                if withMetaData:
                     trackEvents.append((absoluteTime, msg))
                 # Stop collecting meta messages after the first non-meta message.
-                collectMeta = not isinstance(msg, mido.Message)
+                withMetaData = not isinstance(msg, mido.Message)
             else:
                 absoluteTime += msg.time
                 trackEvents.append((absoluteTime, msg))
@@ -250,8 +244,8 @@ def mergeTracks(trackA, trackB):
         mergedEvents.extend(events2[j:])
         return mergedEvents
 
-    events1 = processTrack(trackA, collectMeta=True)
-    events2 = processTrack(trackB, collectMeta=False)
+    events1 = getMidiMessages(track1, withMetaData=True)
+    events2 = getMidiMessages(track2, withMetaData=False)
 
     mergedEvents = mergeSortedEvents(events1, events2)
 
@@ -289,12 +283,62 @@ def concatenateTracks(track1: mido.MidiTrack, track2: mido.MidiTrack):
     newTrack.append(mido.MetaMessage('end_of_track'))
     return newTrack
 
+def concatenateMidiFiles(sourceDir: str, outputDir: str):
+    """
+    Concatenates all midi files in midiDir into a single midi file
+    """
+    files = [f for f in os.listdir(sourceDir) if ".mid" in f]
+    firstMid = mido.MidiFile(f"{sourceDir}/{files[0]}")
+    concatTrack = getBeginningMetaData(firstMid.tracks[0])
+    for f in files:
+        mid = mido.MidiFile(f"{sourceDir}/{f}")
+        concatTrack = concatenateTracks(concatTrack, mid.tracks[0])
+    concatTrack.append(mido.MetaMessage('end_of_track'))
+    
+    newMid = mido.MidiFile(ticks_per_beat=firstMid.ticks_per_beat)
+    newMid.tracks.append(concatTrack)
+    newMid.save(f"{outputDir}/concatenated.mid")
+
 def getEndTime(track: mido.MidiTrack):
     absTime = 0
     for m in track:
         absTime += m.time
     return absTime
-        
+
+def getPitches(percPart: str) -> list:
+    """
+    Returns a list of pitches that correspond to the given percPart
+    Hardcoded.
+    """
+    if percPart == "sna":
+        return SNA_NOTES
+    if percPart == "toms":
+        return TOM_NOTES
+    if percPart == "kick":
+        return KICK_NOTES
+    if percPart == "cym":
+        return CYM_NOTES
+    return []
+
+def isTrackEmpty(track : mido.MidiTrack):
+    """
+    Returns true if the track is empty, aka if it has any note on messages.
+    """
+    for m in track:
+        if isinstance(m, mido.Message) and m.type == 'note_on':
+            return False
+    return True
+
+def getTotalSlices(track: mido.MidiTrack, barStep: int, beatsPerBar: int,  ticksPerBeat: int):
+    """
+    Returns the number of slices in a midi track.
+    Ex: if barstep is 1, and there are four bars in the midi track, then this function returns 4
+    """
+    absTime = 0
+    for m in track:
+        absTime += m.time
+    sliceLen = ticksPerBeat * barStep * beatsPerBar
+    return math.ceil(absTime / sliceLen)    
 
 if __name__ == "__main__":
     print("hello world")
