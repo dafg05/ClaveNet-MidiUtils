@@ -1,0 +1,17 @@
+.DS_Store
+
+__pycache__
+midiUtilsVenv
+midi/augOutput/*
+midi/augSource/*
+midi/examples/*
+midi/separate/*
+midi/split/*
+midi/whole/*
+
+!midi/augOutput/test
+!midi/augSource/test
+!midi/examples/test
+
+midi/augOutput/test/*
+midi/examples/test/out/*
