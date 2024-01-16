@@ -57,3 +57,14 @@ if __name__ == "__main__":
     print(len(os.listdir(SPLIT_DIR)))
 
 
+def trimMidiFile(sourcePath, outPath, startBar:int=0, endBar:int=2, beatsPerBar: int=4):
+    """
+    Assumes single midi track per file
+    """
+    mid = mido.MidiFile(sourcePath)
+    track = mid.tracks[0]
+    
+    newTrack = helpers.trimMidiTrack(track, startBar, endBar, beatsPerBar, mid.ticks_per_beat)
+    
+    mid.tracks = [newTrack]
+    mid.save(outPath)

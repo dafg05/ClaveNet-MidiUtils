@@ -18,6 +18,13 @@ def splitMidiTrackIntoBars(track: mido.MidiTrack, barStep: int, beatsPerBar: int
     
     return midiSlicesTracks
 
+def trimMidiTrack(track: mido.MidiTrack, startBar: int, endBar: int, beatsPerBar: int, ticksPerBeat: int):
+    metaData = getBeginningMetaData(track)
+
+    startTime = startBar * beatsPerBar * ticksPerBeat
+    endTime = endBar * beatsPerBar * ticksPerBeat
+    return getMidiSlice(track, startTime, endTime, metaData)
+
 def getMidiSlice(track: mido.MidiTrack, startTime: int, endTime, metaData: list = []):
     """Extracts midi events from startTime to endTime into a new track
     
@@ -74,7 +81,7 @@ def getMidiSlice(track: mido.MidiTrack, startTime: int, endTime, metaData: list 
     message = firstMessage.copy()
     # due to delta time, change the first message time to be played  after the midi slice starts
     message.time = firstMssgTime
-    absTime += message.time# absolute time of current message
+    absTime += message.time # absolute time of current message
 
     # main loop ---
     while absTime < endTime:
@@ -103,32 +110,21 @@ def getMidiSlice(track: mido.MidiTrack, startTime: int, endTime, metaData: list 
         # note offs
         hangingNotes = [i for i, noteOn in enumerate(noteOnArray) if noteOn >= 0]
 
-        if len(hangingNotes) == 0:
-            # set end of track absolute time to be at end time
-            lastMessageAbsTime = (absTime - message.time)
-            endOfTrackTime = (endTime - 1) - lastMessageAbsTime
+        firstNoteOff = True
+        for note in hangingNotes:
+            if firstNoteOff:
+                # set the first note off message absolute time at end time - 1. 
+                # all additional offs should have the same absolute time
             
-            eotMessage = mido.MetaMessage('end_of_track')
-            eotMessage.time = endOfTrackTime
-            
-            track.append(eotMessage)
-        
-        else:
-            firstNoteOff = True
-            for note in hangingNotes:
-                if firstNoteOff:
-                    # set the first note off message absolute time at end time - 1. 
-                    # all additional offs should have the same absolute time
-                
-                    lastMessageAbsTime = (absTime - message.time)    
-                    noteOffTime = (endTime - 1) - lastMessageAbsTime
-                    firstNoteOff = False
-                else:
-                    noteOffTime = 0
-                track.append(mido.Message('note_off', note=note, velocity=64, time=noteOffTime, channel=noteOnArray[note]))
+                lastMessageAbsTime = (absTime - message.time)    
+                noteOffTime = (endTime - 1) - lastMessageAbsTime
+                firstNoteOff = False
+            else:
+                noteOffTime = 0
+            track.append(mido.Message('note_off', note=note, velocity=64, time=noteOffTime, channel=noteOnArray[note]))
 
-            # end of track meta message
-            track.append(mido.MetaMessage('end_of_track'))
+        # end of track meta message
+        track.append(mido.MetaMessage('end_of_track'))
     
     # clean up track
     closeMidiTrack(newTrack)
