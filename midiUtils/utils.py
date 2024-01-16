@@ -1,7 +1,7 @@
-from constants import *
+from midiUtils.constants import *
+from midiUtils import helpers
 
 import mido
-import helpers
 import os
 from pathlib import Path
 
@@ -47,16 +47,6 @@ def separateMidiFileByPitches(sourcePath, separationName, pitches):
     newMid.tracks.append(newTrack)
     newMid.save(f"{SEPARATE_DIR}/{fileName}_{separationName}.mid")
 
-
-if __name__ == "__main__":
-    for f in os.listdir(WHOLE_DIR):
-        
-        if f.endswith(".mid"):
-            splitMidiFileByBarSteps(f"{WHOLE_DIR}/{f.split('.')[0]}", 2)
-    
-    print(len(os.listdir(SPLIT_DIR)))
-
-
 def trimMidiFile(sourcePath, outPath, startBar:int=0, endBar:int=2, beatsPerBar: int=4):
     """
     Assumes single midi track per file
@@ -68,3 +58,7 @@ def trimMidiFile(sourcePath, outPath, startBar:int=0, endBar:int=2, beatsPerBar:
     
     mid.tracks = [newTrack]
     mid.save(outPath)
+
+
+if __name__ == "__main__":
+    print("hello world")

@@ -1,7 +1,7 @@
 import os
-import utils
 
-from constants import *
+from midiUtils import utils
+from midiUtils.constants import *
 
 def splitMidi(sourceDir, splitDir=SPLIT_DIR):    
     if len(os.listdir(splitDir)) > 0:

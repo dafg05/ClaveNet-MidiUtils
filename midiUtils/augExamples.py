@@ -1,8 +1,8 @@
 import os
 import mido
-import helpers
 
-from constants import *
+from midiUtils.constants import *
+from midiUtils import helpers
 from typing import List
 
 class AugExample:

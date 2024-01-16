@@ -1,4 +1,4 @@
-from constants import *
+from midiUtils.constants import *
 
 import math
 import mido

@@ -1,7 +1,7 @@
-from constants import *
-from augExamples import AugExamplesRetriever, AugExample
+from midiUtils.constants import *
+from midiUtils import helpers
+from midiUtils.augExamples import AugExamplesRetriever, AugExample
 
-import helpers
 import mido
 import os
 import random

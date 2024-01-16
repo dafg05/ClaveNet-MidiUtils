@@ -1,8 +1,7 @@
-import dataAug
 import random
-import os
 
-from constants import *
+from midiUtils import dataAug
+from midiUtils.constants import *
 
 SOURCE_DIR = DATA_AUG_SOURCE_DIR + "/test"
 OUTPUT_DIR = DATA_AUG_OUTPUT_DIR + "/test"

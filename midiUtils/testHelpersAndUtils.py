@@ -1,6 +1,6 @@
-from helpers import *
-from constants import *
-from utils import *
+from midiUtils.helpers import *
+from midiUtils.constants import *
+from midiUtils.utils import *
 import mido
 
 # TODO: fix all tests
