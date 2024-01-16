@@ -1,6 +1,6 @@
 from helpers import *
 from constants import *
-
+from utils import *
 import mido
 
 # TODO: fix all tests
@@ -90,6 +90,12 @@ def testEndTime():
     
     print(f"Success!! expectedEndTime: {expectedEndTime}, actualEndTime: {actualEndTime}")
 
+def testTrimMidiFile():
+    sourcePath = f"{TEST_SOURCE_DIR}/toTrim.mid"
+    outPath = f"{TEST_OUTPUT_DIR}/trimmed.mid"
+    trimMidiFile(sourcePath, outPath, 1, 2, 4)
+    print(f"Trimmmed midi file to {outPath}")
+
 if __name__ == "__main__":
 
 
@@ -100,4 +106,5 @@ if __name__ == "__main__":
     # testDeletePitches()
     # testGetTrackWithoutBeginningMetadata()
     # testConcatenateTracks()
-    testEndTime()
+    # testEndTime()
+    testTrimMidiFile()
