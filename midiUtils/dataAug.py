@@ -6,9 +6,7 @@ import mido
 import os
 import random
 
-DEBUG = True
-
-def augmentationScheme(sourceDir, outputDir, examplesDir, styleParams, numTranformations = 3, fixedPartsToReplace = None, numReplacements=1):
+def augmentationScheme(sourceDir, outputDir, examplesDir, styleParams, numTranformations = 3, fixedPartsToReplace = None, numReplacements=1, seed=0, debug=False):
     """
     For every midi file in sourceDir, computes NUM_TRANSFORMATIONS transformed midi files
     and saves them in the outputDir. 
@@ -26,6 +24,8 @@ def augmentationScheme(sourceDir, outputDir, examplesDir, styleParams, numTranfo
 
     """
 
+    random.seed(seed)
+
     augExamplesRetriever = AugExamplesRetriever(dir=examplesDir)
     for f in os.listdir(sourceDir):
         # Skip non-midi files
@@ -36,10 +36,10 @@ def augmentationScheme(sourceDir, outputDir, examplesDir, styleParams, numTranfo
         for i in range(numTranformations):
             partsToReplace = getPartsToReplace(fixedPartsToReplace, numReplacements)
 
-            newMid = transformMidiFile(mid, partsToReplace, augExamplesRetriever, styleParams)
+            newMid = transformMidiFile(mid, partsToReplace, augExamplesRetriever, styleParams, debug)
             newMid.save(f"{outputDir}/{f}_tra-{i:02d}.mid")
 
-def transformMidiFile(mid: mido.MidiFile, partsToReplace: list, augExamplesRetriever: AugExamplesRetriever, styleParams: dict) -> mido.MidiFile:
+def transformMidiFile(mid: mido.MidiFile, partsToReplace: list, augExamplesRetriever: AugExamplesRetriever, styleParams: dict, debug=False) -> mido.MidiFile:
     """
     Transforms a midi file by probably replacing the specified parts with parts from the same style;
     otherwise replaces with parts from a different style.
@@ -53,8 +53,8 @@ def transformMidiFile(mid: mido.MidiFile, partsToReplace: list, augExamplesRetri
     returns
     transformedMid: transformed midiFile
     """
-
-    # print(f"Transforming midi file {mid.filename} with parts: {partsToReplace}, preferredStyle: {styleParams['preferredStyle']}, outOfStyleProb: {styleParams['outOfStyleProb']}")
+    if debug:
+        print(f"Transforming midi file {mid.filename} with parts: {partsToReplace}, preferredStyle: {styleParams['preferredStyle']}, outOfStyleProb: {styleParams['outOfStyleProb']}")
 
     track = mid.tracks[0]
     preferredStyle = styleParams["preferredStyle"]
