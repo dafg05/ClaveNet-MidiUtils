@@ -193,6 +193,8 @@ def getBeginningMetaData(track: mido.MidiTrack):
     i = 0
     while isinstance(track[i], mido.MetaMessage) and track[i].time == 0:
         metaData.append(track[i])
+        if i + 1 == len(track):
+            break
         i += 1
     return metaData
 
