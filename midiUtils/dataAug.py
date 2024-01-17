@@ -23,6 +23,7 @@ def augmentationScheme(sourceDir, outputDir, examplesDir, styleParams, numTranfo
     numReplacements: If fixedPartsToReplace is not specified, then this denotes the number of 
     randomly chosen parts to replace. Else, this parameter is ignored.
     styleParams: keys are "preferredStyle" and "outOfStyleProb". 
+
     """
 
     augExamplesRetriever = AugExamplesRetriever(dir=examplesDir)
@@ -36,7 +37,7 @@ def augmentationScheme(sourceDir, outputDir, examplesDir, styleParams, numTranfo
             partsToReplace = getPartsToReplace(fixedPartsToReplace, numReplacements)
 
             newMid = transformMidiFile(mid, partsToReplace, augExamplesRetriever, styleParams)
-            newMid.save(f"{outputDir}/{f}_transf-{i:03d}.mid")
+            newMid.save(f"{outputDir}/{f}_tra-{i:02d}.mid")
 
 def transformMidiFile(mid: mido.MidiFile, partsToReplace: list, augExamplesRetriever: AugExamplesRetriever, styleParams: dict) -> mido.MidiFile:
     """
@@ -53,7 +54,7 @@ def transformMidiFile(mid: mido.MidiFile, partsToReplace: list, augExamplesRetri
     transformedMid: transformed midiFile
     """
 
-    print(f"Transforming midi file {mid.filename} with parts: {partsToReplace}, preferredStyle: {styleParams['preferredStyle']}, outOfStyleProb: {styleParams['outOfStyleProb']}")
+    # print(f"Transforming midi file {mid.filename} with parts: {partsToReplace}, preferredStyle: {styleParams['preferredStyle']}, outOfStyleProb: {styleParams['outOfStyleProb']}")
 
     track = mid.tracks[0]
     preferredStyle = styleParams["preferredStyle"]
@@ -80,7 +81,6 @@ def transformMidiFile(mid: mido.MidiFile, partsToReplace: list, augExamplesRetri
     transformedMid = mido.MidiFile(ticks_per_beat=mid.ticks_per_beat)
     transformedMid.tracks.append(newTrack)
     
-    print(f"Transformation done!")
     return transformedMid
 
 def getReplacementTrack(percPart: str, preferredStyle: str, outOfStyleProb: int, augExamplesRetriever: AugExamplesRetriever) -> mido.MidiTrack:

@@ -5,7 +5,7 @@ __pycache__
 venv
 midi/augOutput/*
 midi/augSource/*
-midi/examples/*
+midi/examples/old
 midi/separate/*
 midi/split/*
 midi/whole/*

@@ -28,7 +28,7 @@ def splitMidiFileByBarSteps(sourcePath, split_dir, barStep: int = 1):
         b = bars[i]
         newMid = mido.MidiFile(ticks_per_beat=mid.ticks_per_beat)
         newMid.tracks.append(b)
-        newMid.save(f"{fileSplitDir}/{fileName}_slice_{i:03d}.mid")
+        newMid.save(f"{fileSplitDir}/{fileName}_spl-{i:03d}.mid")
 
 def separateMidiFileByPitches(sourcePath, separationName, pitches):
     """
@@ -60,7 +60,3 @@ def trimMidiFile(sourcePath, outPath, startBar:int=0, endBar:int=2, beatsPerBar:
         mid.tracks[i] = newTrack
     
     mid.save(outPath)
-
-
-if __name__ == "__main__":
-    print("hello world")

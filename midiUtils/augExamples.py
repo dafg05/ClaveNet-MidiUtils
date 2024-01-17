@@ -35,11 +35,12 @@ class AugExamplesRetriever:
         # dir
         self.dir = dir
         # styles
-        self.styles = set()
+        styleSet = set()
         for f in os.listdir(dir):
             if f.endswith(".mid"):
                 style = f.split("_")[0]
-                self.styles.add(style)
+                styleSet.add(style)
+        self.styles = list(styleSet)
         if len(self.styles) < 2:
             raise Exception(f"Must have at least 2 styles in {dir} to construct AugExamplesRetriever.")
         
