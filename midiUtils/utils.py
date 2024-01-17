@@ -49,14 +49,16 @@ def separateMidiFileByPitches(sourcePath, separationName, pitches):
 
 def trimMidiFile(sourcePath, outPath, startBar:int=0, endBar:int=2, beatsPerBar: int=4):
     """
-    Assumes single midi track per file
+    Trims all tracks.
     """
     mid = mido.MidiFile(sourcePath)
-    track = mid.tracks[0]
     
-    newTrack = helpers.trimMidiTrack(track, startBar, endBar, beatsPerBar, mid.ticks_per_beat)
+    # replace tracks with slices
+    for i in range(len(mid.tracks)):
+        track = mid.tracks[i]
+        newTrack = helpers.trimMidiTrack(track, startBar, endBar, beatsPerBar, mid.ticks_per_beat)
+        mid.tracks[i] = newTrack
     
-    mid.tracks = [newTrack]
     mid.save(outPath)
 
 

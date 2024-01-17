@@ -11,9 +11,14 @@ def splitMidiTrackIntoBars(track: mido.MidiTrack, barStep: int, beatsPerBar: int
     totalSlices = getTotalSlices(track, barStep, beatsPerBar, ticksPerBeat)
     sliceLen = ticksPerBeat * barStep * beatsPerBar
 
+    firstSlice = True
     for startTime in range(0, sliceLen * totalSlices, sliceLen):
         endTime = startTime + sliceLen
-        midiSliceTrack = getMidiSlice(track, startTime, endTime, metaData)
+        if firstSlice: # first slice does not need meta data
+            midiSliceTrack = getMidiSlice(track, startTime, endTime)
+            firstSlice = False
+        else:
+            midiSliceTrack = getMidiSlice(track, startTime, endTime, metaData)
         midiSlicesTracks.append(midiSliceTrack)
     
     return midiSlicesTracks
@@ -25,7 +30,7 @@ def trimMidiTrack(track: mido.MidiTrack, startBar: int, endBar: int, beatsPerBar
     endTime = endBar * beatsPerBar * ticksPerBeat
     return getMidiSlice(track, startTime, endTime, metaData)
 
-def getMidiSlice(track: mido.MidiTrack, startTime: int, endTime, metaData: list = []):
+def getMidiSlice(track: mido.MidiTrack, startTime: int, endTime, metaData: list = None):
     """Extracts midi events from startTime to endTime into a new track
     
     :param track: the midi track to slice
@@ -38,18 +43,17 @@ def getMidiSlice(track: mido.MidiTrack, startTime: int, endTime, metaData: list 
 
     def firstMessageInSlice(startTime: int):
         """
-        Returns index of first message (non-meta) that occurs after startTime
-        Also returns the time the first message time (adjusted for startTime)
+        Returns index of first message that occurs after startTime
+        Also returns the absoluteTimeOfFirstMessage - startTime as firstMssgTime
         """
         firstMssgIndex = 0
         absTime = track[firstMssgIndex].time
-        # exclude meta messages within time slice
-        while not (absTime >= startTime and isinstance(track[firstMssgIndex], mido.Message)):
+        while not (absTime >= startTime):
             firstMssgIndex += 1
             if firstMssgIndex < len(track):
                 absTime += track[firstMssgIndex].time
             else:
-                return -1
+                return -1, -1
         firstMssgTime = absTime - startTime
         return firstMssgIndex, firstMssgTime
     
@@ -60,19 +64,16 @@ def getMidiSlice(track: mido.MidiTrack, startTime: int, endTime, metaData: list 
     # if messageIndex is -1 or it exceeds the len of the track, then there are no messages within this midi slice
     if messageIndex == -1 or messageIndex == len(track):
         return mido.MidiTrack()
-    
-    # calculate metaData if it wasn't provided
-    if metaData == []:
-        metaData = getBeginningMetaData(track)
 
     # MAIN ALGORITHM -------------------------------------------------------
 
-    # initialize new track with metadata
+    # initialize new track
     newTrack = mido.MidiTrack()
-    newTrack.extend(metaData)
+    if metaData:
+        newTrack.extend(metaData)
     absTime = startTime
 
-    # indices are note values
+    # noteOnArray: indices are note values
     # value is either -1 if note is off, channelNum if note is on
     # we'll need the channelNum to turn any hanging notes off
     noteOnArray = [-1 for x in range(128)]
@@ -123,8 +124,9 @@ def getMidiSlice(track: mido.MidiTrack, startTime: int, endTime, metaData: list 
                 noteOffTime = 0
             track.append(mido.Message('note_off', note=note, velocity=64, time=noteOffTime, channel=noteOnArray[note]))
 
-        # end of track meta message
-        track.append(mido.MetaMessage('end_of_track'))
+        # end of track meta message, if needed
+        if track[-1].type != 'end_of_track':
+            track.append(mido.MetaMessage('end_of_track'))
     
     # clean up track
     closeMidiTrack(newTrack)
@@ -186,8 +188,12 @@ def getBeginningMetaData(track: mido.MidiTrack):
     Returns a list of meta messages that occur before the first non-meta message
     """
     metaData = []
+    if len(track) == 0:
+        return []
     i = 0
     while isinstance(track[i], mido.MetaMessage):
+        if track[i].time != 0:
+            raise Exception(f"MetaDataMessage's time is not 0. {track[i]}")
         metaData.append(track[i])
         i += 1
     return metaData
@@ -324,6 +330,16 @@ def isTrackEmpty(track : mido.MidiTrack):
         if isinstance(m, mido.Message) and m.type == 'note_on':
             return False
     return True
+
+def hasMetaData(track : mido.MidiTrack):
+    """
+    If the first message is a meta message of time zero, then this track contains metaData
+    """
+    
+    message = track[0]
+    if isinstance(message, mido.MetaMessage) and message.time == 0:
+        return True
+    return False
 
 def getTotalSlices(track: mido.MidiTrack, barStep: int, beatsPerBar: int,  ticksPerBeat: int):
     """

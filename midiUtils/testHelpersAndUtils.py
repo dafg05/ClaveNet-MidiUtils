@@ -93,13 +93,29 @@ def testEndTime():
 def testTrimMidiFile():
     sourcePath = f"{TEST_SOURCE_DIR}/toTrim.mid"
     outPath = f"{TEST_OUTPUT_DIR}/trimmed.mid"
+
+    mid = mido.MidiFile(sourcePath)
+
     trimMidiFile(sourcePath, outPath, 1, 2, 4)
+    
+    mid = mido.MidiFile(outPath)
+    
+    assert len(mid.tracks) == 2, f"Mid should have two tracks! Actual length: {len(mid.tracks)}"
+    assert mid.tracks[1][0].type == "note_off", f"Something went wrong when trimming second track! Track is:\n {mid.tracks[1]}"
+
     print(f"Trimmmed midi file to {outPath}")
 
+def testHasMetaData():
+    sourcePath = f"{TEST_SOURCE_DIR}/toTrim.mid"
+    
+    mid = mido.MidiFile(sourcePath)
+    firstTrack = mid.tracks[0]
+    secondTrack = mid.tracks[1]
+
+    print(f"FirstTrack SHOULD have meta data. Does it? {helpers.hasMetaData(firstTrack)}")
+    print(f"SecondTrack should NOT have metadata. Does it? {helpers.hasMetaData(secondTrack)}")
+
 if __name__ == "__main__":
-
-
-
     # testMergeTracks()
     # testSplitIntoBars
     # testSeparateIntoPitches()
@@ -108,3 +124,4 @@ if __name__ == "__main__":
     # testConcatenateTracks()
     # testEndTime()
     testTrimMidiFile()
+    # testHasMetaData()
