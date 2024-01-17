@@ -6,7 +6,7 @@ import mido
 import os
 import random
 
-def augmentationScheme(sourceDir, outputDir, examplesDir, styleParams, numTranformations = 3, fixedPartsToReplace = None, numReplacements=1, seed=0, debug=False):
+def augmentationScheme(sourceDir, outputDir, examplesDir, styleParams, numTransformations = 3, fixedPartsToReplace = None, numReplacements=1, seed=0, debug=False):
     """
     For every midi file in sourceDir, computes NUM_TRANSFORMATIONS transformed midi files
     and saves them in the outputDir. 
@@ -15,7 +15,7 @@ def augmentationScheme(sourceDir, outputDir, examplesDir, styleParams, numTranfo
     param
     sourceDir: dir that contains files to transform
     outputDir: dir that will contain transformations + unaltered files
-    numTranformations: number of transformations to compute for each midi file, not including the original
+    numTransformations: number of transformations to compute for each midi file, not including the original
     fixedPartsToReplace: If specified, denotes the exact percussion parts that will be replaced. Else,
     parts to replace will be randomly computed.
     numReplacements: If fixedPartsToReplace is not specified, then this denotes the number of 
@@ -33,7 +33,7 @@ def augmentationScheme(sourceDir, outputDir, examplesDir, styleParams, numTranfo
             continue
         mid = mido.MidiFile(f'{sourceDir}/{f}')
         mid.save(f"{outputDir}/{f}_original.mid")
-        for i in range(numTranformations):
+        for i in range(numTransformations):
             partsToReplace = getPartsToReplace(fixedPartsToReplace, numReplacements)
 
             newMid = transformMidiFile(mid, partsToReplace, augExamplesRetriever, styleParams, debug)
