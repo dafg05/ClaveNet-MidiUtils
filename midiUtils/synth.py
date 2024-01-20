@@ -5,7 +5,7 @@ import os
 from pretty_midi import PrettyMIDI
 
 SR = 44100
-SF_PATH = "soundfonts/Standard_Drum_Kit.sf2"
+SF_PATH = os.path.dirname(__file__) + "/Standard_Drum_Kit.sf2"
 
 def synthesize_all(source_dir, audio_dir, prefix=""):
     if not os.path.exists(source_dir):
@@ -31,6 +31,5 @@ def getFilename(midi_path):
     filename = filename.split(".")[0]
     return filename
 
-def usageAndExit():
-    print("Usage: python synthesize.py <dir>")
-    sys.exit(1)
+if __name__ == "__main__":
+    print(SF_PATH)
