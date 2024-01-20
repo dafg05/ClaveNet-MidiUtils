@@ -2,7 +2,7 @@ from setuptools import setup, find_packages
 
 setup(
     name='midiUtils',
-    version='0.1.7',
+    version='0.1.8',
     author='Daniel Flores Garcia',
     author_email='danialefloresg@gmail.com',
     description='Used for drum gen project.',
@@ -14,6 +14,10 @@ setup(
         "numpy",
         "mido"
     ],
+    include_package_data=True,
+    package_data={
+        'midiUtils' : ['Standard_Drum_Kit.sf2']
+    },
     classifiers=[
         'Development Status :: 3 - Alpha',
         'Intended Audience :: Developers',
