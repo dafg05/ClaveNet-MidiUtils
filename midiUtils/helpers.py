@@ -207,24 +207,28 @@ def getTrackWithoutBeginningMetaData(track: mido.MidiTrack):
         i += 1
     return track[i:]
 
-def mergeTracks(track1, track2):
+def mergeTracks(track1, track2, channel: int):
     """
     Merge two midi tracks; aka combines the messages of both tracks into a single track.
     Keeps track1's metadata
     """
-    def getMidiMessages(track, withMetaData):
+    def getMidiMessages(track, withMetaData, channel):
         """
-        returns the midi messages of a track as a list of tuples (absoluteTime, message)
+        returns the midi messages of a track as a list of tuples (absoluteTime, message). Fix the given channel for all messages.
         """
         absoluteTime = 0
         trackEvents = []
+        firstNonMetaMessageFound = False
         for msg in track:
+            # once we've reached the first non-meta message, any other MetaMessage is no longer considered metadata
+            metaMessageAllowed = withMetaData or firstNonMetaMessageFound
             if isinstance(msg, mido.MetaMessage):
-                if withMetaData:
+                if metaMessageAllowed:
                     trackEvents.append((absoluteTime, msg))
-                # Stop collecting meta messages after the first non-meta message.
-                withMetaData = not isinstance(msg, mido.Message)
             else:
+                if msg.channel != channel:
+                    msg.channel = channel
+                firstNonMetaMessageFound = True
                 absoluteTime += msg.time
                 trackEvents.append((absoluteTime, msg))
         return trackEvents
@@ -246,8 +250,18 @@ def mergeTracks(track1, track2):
         mergedEvents.extend(events2[j:])
         return mergedEvents
 
-    events1 = getMidiMessages(track1, withMetaData=True)
-    events2 = getMidiMessages(track2, withMetaData=False)
+    events1 = getMidiMessages(track1, withMetaData=True, channel=channel)
+    events2 = getMidiMessages(track2, withMetaData=False, channel=channel)
+
+    # from the two events list, keep the end of track message with the greatest absolute time.
+    endOfTime1 = events1[-1]
+    endOfTime2 = events2[-1]
+    # make sure that we're actually dealing with end of track messages
+    assert endOfTime1[1].type == "end_of_track" and endOfTime2[1].type == "end_of_track"
+    if endOfTime1[0] < endOfTime2[0]: # compare absolute times
+        events1.pop(-1)
+    else:
+        events2.pop(-1)
 
     mergedEvents = mergeSortedEvents(events1, events2)
 
@@ -261,14 +275,15 @@ def mergeTracks(track1, track2):
 
     return mergedTrack
 
-def mergeMultipleTracks(tracks: list):
+def mergeMultipleTracks(tracks: list, channel=9):
     """
-    Merges multiple tracks into a single track
+    Merges multiple tracks into a single track, fixing all messages to the same channel.
+    The beginning metadata in tracks[0] will be used for the final merged track; all other
+    metadata will be skipped.
     """
-    # mergedTrack = MidiTrack()
     mergedTrack = tracks[0]
-    for track in tracks:
-        mergedTrack = mergeTracks(mergedTrack, track)
+    for i in range(1, len(tracks)):
+        mergedTrack = mergeTracks(mergedTrack, tracks[i], channel=channel)
     return mergedTrack
 
 def concatenateTracks(track1: mido.MidiTrack, track2: mido.MidiTrack):

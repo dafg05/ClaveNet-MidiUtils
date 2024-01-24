@@ -5,6 +5,7 @@ from midiUtils.augExamples import AugExamplesRetriever, AugExample
 import mido
 import os
 import random
+import copy
 
 def augmentationScheme(sourceDir, outputDir, examplesDir, styleParams, numTransformations = 3, fixedPartsToReplace = None, numReplacements=1, seed=0, debug=False):
     """
@@ -35,28 +36,30 @@ def augmentationScheme(sourceDir, outputDir, examplesDir, styleParams, numTransf
         mid.save(f"{outputDir}/{f}_original.mid")
         for i in range(numTransformations):
             partsToReplace = getPartsToReplace(fixedPartsToReplace, numReplacements)
+            trackIndex = 0
 
-            newMid = transformMidiFile(mid, partsToReplace, augExamplesRetriever, styleParams, debug)
+            newMid = transformMidiFile(mid, trackIndex, partsToReplace, augExamplesRetriever, styleParams, debug)
             newMid.save(f"{outputDir}/{f}_tra-{i:02d}.mid")
 
-def transformMidiFile(mid: mido.MidiFile, partsToReplace: list, augExamplesRetriever: AugExamplesRetriever, styleParams: dict, debug=False) -> mido.MidiFile:
+def transformMidiFile(mid: mido.MidiFile, trackIndex: int, partsToReplace: list, augExamplesRetriever: AugExamplesRetriever, styleParams: dict, debug=False) -> mido.MidiFile:
     """
     Transforms a midi file by probably replacing the specified parts with parts from the same style;
     otherwise replaces with parts from a different style.
 
     params
     mid: Original midifile
+    trackIndex: the miditrack the replacement algorithm will be run
     partsToReplace: strings denoting the parts that should be replaced
     augExamplesRetriever: object to facilitate choosing replacement tracks
     styleParams: keys are "preferredStyle" and "outOfStyleProb". 
 
     returns
-    transformedMid: transformed midiFile
+    transformedMid: transformed midiFile, which is a copy of the original save for the new track.
     """
     if debug:
-        print(f"Transforming midi file {mid.filename} with parts: {partsToReplace}, preferredStyle: {styleParams['preferredStyle']}, outOfStyleProb: {styleParams['outOfStyleProb']}")
+        print(f"Transforming midi file {mid.filename} with parts: {partsToReplace}, trackIndex: {trackIndex}, preferredStyle: {styleParams['preferredStyle']}, outOfStyleProb: {styleParams['outOfStyleProb']}")
 
-    track = mid.tracks[0]
+    oldTrack = mid.tracks[trackIndex]
     preferredStyle = styleParams["preferredStyle"]
     outOfStyleProb = styleParams["outOfStyleProb"]
 
@@ -67,19 +70,19 @@ def transformMidiFile(mid: mido.MidiFile, partsToReplace: list, augExamplesRetri
     pitchesToDelete = []
     for p in partsToReplace:
         pitchesToDelete.extend(helpers.getPitches(p))
-    track = helpers.deletePitches(track, pitchesToDelete)
+    oldTrack = helpers.deletePitches(oldTrack, pitchesToDelete)
 
     # determine tracksToMerge
-    tracksToMerge = [track]
+    tracksToMerge = [oldTrack]
     for p in partsToReplace:
         tracksToMerge.append(getReplacementTrack(p, preferredStyle, outOfStyleProb, augExamplesRetriever))
     
     # actually merge tracks
     newTrack = helpers.mergeMultipleTracks(tracksToMerge)
-    
+
     # Construct transformed midi file
-    transformedMid = mido.MidiFile(ticks_per_beat=mid.ticks_per_beat)
-    transformedMid.tracks.append(newTrack)
+    transformedMid = copy.deepcopy(mid)
+    transformedMid.tracks[trackIndex] = newTrack
     
     return transformedMid
 
