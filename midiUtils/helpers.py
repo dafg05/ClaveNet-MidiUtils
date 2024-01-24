@@ -253,6 +253,10 @@ def mergeTracks(track1, track2, channel: int):
     events1 = getMidiMessages(track1, withMetaData=True, channel=channel)
     events2 = getMidiMessages(track2, withMetaData=False, channel=channel)
 
+    # if the second track does not contain any non-meta messsages, return the first track
+    if not events2:
+        return track1
+
     # from the two events list, keep the end of track message with the greatest absolute time.
     endOfTime1 = events1[-1]
     endOfTime2 = events2[-1]

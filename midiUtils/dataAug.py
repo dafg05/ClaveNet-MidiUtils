@@ -77,8 +77,11 @@ def transformMidiFile(mid: mido.MidiFile, trackIndex: int, partsToReplace: list,
     for p in partsToReplace:
         tracksToMerge.append(getReplacementTrack(p, preferredStyle, outOfStyleProb, augExamplesRetriever))
     
-    # actually merge tracks
-    newTrack = helpers.mergeMultipleTracks(tracksToMerge)
+    try:
+        # actually merge tracks
+        newTrack = helpers.mergeMultipleTracks(tracksToMerge)
+    except Exception as e:
+        raise Exception(f"Something went wrong when trying to merge tracks. oldTrack: {oldTrack}, len(tracksToMerge): {len(tracksToMerge)}")
 
     # Construct transformed midi file
     transformedMid = copy.deepcopy(mid)
