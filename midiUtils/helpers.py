@@ -212,7 +212,7 @@ def mergeTracks(track1, track2, channel: int):
     Merge two midi tracks; aka combines the messages of both tracks into a single track.
     Keeps track1's metadata
     """
-    def getMidiMessages(track, withMetaData, channel):
+    def getMidiMessagesWithAbsTime(track, withMetaData, channel):
         """
         returns the midi messages of a track as a list of tuples (absoluteTime, message). Fix the given channel for all messages.
         """
@@ -233,41 +233,60 @@ def mergeTracks(track1, track2, channel: int):
                 trackEvents.append((absoluteTime, msg))
         return trackEvents
 
-    def mergeSortedEvents(events1, events2):
-        mergedEvents = []
+    def mergeSortedEvents(messageList1, messageList2):
+        mergedMesssages = []
         i, j = 0, 0
 
-        while i < len(events1) and j < len(events2):
-            if events1[i][0] <= events2[j][0]:
-                mergedEvents.append(events1[i])
+        while i < len(messageList1) and j < len(messageList2):
+            if messageList1[i][0] <= messageList2[j][0]:
+                mergedMesssages.append(messageList1[i])
                 i += 1
+            # if there is an absolute time tie, prioritize note-offs and non end-of-track meta messages
+            # if there are still ties after this, prioritize messages from events1
+            elif messageList1[i][0] == messageList2[j][0]:
+                m1 = messageList1[i][1]
+                m2 = messageList2[j][1]
+                if m1.type == "note_off":
+                    mergedMesssages.append(messageList1[i])
+                    i += 1
+                elif m2.type == "note_off":
+                    mergedMesssages.append(messageList2[j])
+                    j += 1
+                elif m1.type == 'end_of_track':
+                    mergedMesssages.append(messageList2[j])
+                    j += 1
+                else:
+                    mergedMesssages.append(messageList1[i])
+                    i += 1
             else:
-                mergedEvents.append(events2[j])
+                mergedMesssages.append(messageList2[j])
                 j += 1
         
         # Add any remaining events from either list
-        mergedEvents.extend(events1[i:])
-        mergedEvents.extend(events2[j:])
-        return mergedEvents
+        mergedMesssages.extend(messageList1[i:])
+        mergedMesssages.extend(messageList2[j:])
+        return mergedMesssages
 
-    events1 = getMidiMessages(track1, withMetaData=True, channel=channel)
-    events2 = getMidiMessages(track2, withMetaData=False, channel=channel)
+    messageList1 = getMidiMessagesWithAbsTime(track1, withMetaData=True, channel=channel)
+    messageList2 = getMidiMessagesWithAbsTime(track2, withMetaData=False, channel=channel)
 
     # if the second track does not contain any non-meta messsages, return the first track
-    if not events2:
+    if not messageList2:
         return track1
 
-    # from the two events list, keep the end of track message with the greatest absolute time.
-    endOfTime1 = events1[-1]
-    endOfTime2 = events2[-1]
+    # from the two messageLists, keep the end of track message with the greatest absolute time.
+    endOfTime1 = messageList1[-1]
+    endOfTime2 = messageList2[-1]
     # make sure that we're actually dealing with end of track messages
-    assert endOfTime1[1].type == "end_of_track" and endOfTime2[1].type == "end_of_track"
+    assert endOfTime1[1].type == "end_of_track", f"Track merging error: Last message in messageList1 is not end-of-track. MessageList1 :{messageList1}"
+    assert endOfTime2[1].type == "end_of_track", f"Track merging error: Last message in messageList2 is not end-of-track. MessageList2 :{messageList2}"
+    
     if endOfTime1[0] < endOfTime2[0]: # compare absolute times
-        events1.pop(-1)
+        messageList1.pop(-1)
     else:
-        events2.pop(-1)
+        messageList2.pop(-1)
 
-    mergedEvents = mergeSortedEvents(events1, events2)
+    mergedEvents = mergeSortedEvents(messageList1, messageList2)
 
     mergedTrack = mido.MidiTrack()
     lastTime = 0
