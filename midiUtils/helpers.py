@@ -246,13 +246,13 @@ def mergeTracks(track1, track2, channel: int):
             elif messageList1[i][0] == messageList2[j][0]:
                 m1 = messageList1[i][1]
                 m2 = messageList2[j][1]
-                if m1.type == "note_off":
+                if m1.type == 'end_of_track':
+                    mergedMesssages.append(messageList2[j])
+                    j += 1
+                elif m1.type == "note_off":
                     mergedMesssages.append(messageList1[i])
                     i += 1
                 elif m2.type == "note_off":
-                    mergedMesssages.append(messageList2[j])
-                    j += 1
-                elif m1.type == 'end_of_track':
                     mergedMesssages.append(messageList2[j])
                     j += 1
                 else:
@@ -278,8 +278,8 @@ def mergeTracks(track1, track2, channel: int):
     endOfTime1 = messageList1[-1]
     endOfTime2 = messageList2[-1]
     # make sure that we're actually dealing with end of track messages
-    assert endOfTime1[1].type == "end_of_track", f"Track merging error: Last message in messageList1 is not end-of-track. MessageList1 :{messageList1}"
-    assert endOfTime2[1].type == "end_of_track", f"Track merging error: Last message in messageList2 is not end-of-track. MessageList2 :{messageList2}"
+    assert endOfTime1[1].type == "end_of_track", f"Track merging error: Last message in messageList1 is not end-of-track. Last message :{endOfTime1}"
+    assert endOfTime2[1].type == "end_of_track", f"Track merging error: Last message in messageList2 is not end-of-track. Last message :{endOfTime2}"
     
     if endOfTime1[0] < endOfTime2[0]: # compare absolute times
         messageList1.pop(-1)
