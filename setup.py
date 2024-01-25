@@ -2,7 +2,7 @@ from setuptools import setup, find_packages
 
 setup(
     name='midiUtils',
-    version='0.1.10',
+    version='0.1.11',
     author='Daniel Flores Garcia',
     author_email='danialefloresg@gmail.com',
     description='Used for drum gen project.',
