@@ -1,11 +1,15 @@
 from midiUtils.constants import *
+from midiUtils.absTrack import AbsoluteTimeTrack, AbsoluteTimeMidiMessage, getMidiTrackExcludingPitches, getMidiTrackIncludingPitches, mergeAbsoluteTimeTracks, getNoteMessagesAbsTrack
 
 import math
 import mido
 import os
 
 def splitMidiTrackIntoBars(track: mido.MidiTrack, barStep: int, beatsPerBar: int,  ticksPerBeat: int):
-    metaData = getBeginningMetaData(track)
+    """
+    TODO: refactor to use absTrack
+    """
+    metaData = getMetaDataAndIndex(track)
     
     midiSlicesTracks = []
     totalSlices = getTotalSlices(track, barStep, beatsPerBar, ticksPerBeat)
@@ -24,7 +28,10 @@ def splitMidiTrackIntoBars(track: mido.MidiTrack, barStep: int, beatsPerBar: int
     return midiSlicesTracks
 
 def trimMidiTrack(track: mido.MidiTrack, startBar: int, endBar: int, beatsPerBar: int, ticksPerBeat: int):
-    metaData = getBeginningMetaData(track)
+    """
+    TODO: refactor to use absTrack
+    """
+    metaData = getMetaDataAndIndex(track)
 
     startTime = startBar * beatsPerBar * ticksPerBeat
     endTime = endBar * beatsPerBar * ticksPerBeat
@@ -39,6 +46,8 @@ def getMidiSlice(track: mido.MidiTrack, startTime: int, endTime, metaData: list 
     :optional param metaData: list of meta messages that occur before the first non-meta message
 
     :returns newTrack: new midi track containing events from startTime to endTime
+
+    TODO: refactor to use absTrack
     """
 
     def firstMessageInSlice(startTime: int):
@@ -125,42 +134,26 @@ def getMidiSlice(track: mido.MidiTrack, startTime: int, endTime, metaData: list 
             track.append(mido.Message('note_off', note=note, velocity=64, time=noteOffTime, channel=noteOnArray[note]))
 
         # end of track meta message, if needed
-        if track[-1].type != 'end_of_track':
-            track.append(mido.MetaMessage('end_of_track'))
+        if track[-1].type != END_OF_TRACK:
+            track.append(mido.MetaMessage(END_OF_TRACK))
     
     # clean up track
     closeMidiTrack(newTrack)
     return newTrack
 
-def getTrackWithSelectPitches(track: mido.MidiTrack, pitches: list):
+def getTrackWithSelectPitches(track: mido.MidiTrack, pitches: list) -> mido.MidiTrack:
     """
     Returns a midi track that containing only the specified pitches of the original track
     """
-    # initialize a new track with meta data
-    newTrack = mido.MidiTrack()
-    newTrack.extend(getBeginningMetaData(track))
-
-    currAbsTime = 0
-    lastAbsTime = 0
-    for m in track:
-        currAbsTime += m.time
-        # only add messages of this specific pitch
-        if isinstance(m, mido.Message) and (m.type == 'note_on' or m.type == 'note_off'):
-            if m.note in pitches:
-                newM = m.copy()
-                newM.time = currAbsTime - lastAbsTime
-                newTrack.append(newM)
-                lastAbsTime = currAbsTime
-    # end of track meta message
-    newTrack.append(mido.MetaMessage('end_of_track'))
-    return newTrack
+    trackTools = AbsoluteTimeTrack(track)
+    return trackTools.getTrackIncludingPitches(pitches)
 
 def deletePitches(track: mido.MidiTrack, pitches: list):
     """
     Deletes all messages with the specified pitches from the track
     """
-    pitchesToKeep = [x for x in range(128) if x not in pitches]
-    return getTrackWithSelectPitches(track, pitchesToKeep)
+    trackTools = AbsoluteTimeTrack(track)
+    return trackTools.getTrackExcludingPitches(pitches)
 
 def change_midi_tempo(midi_file_path, new_tempo):
     # Load the MIDI file
@@ -183,131 +176,53 @@ def change_midi_tempo(midi_file_path, new_tempo):
     return midi_file_path
 
 
-def getBeginningMetaData(track: mido.MidiTrack):
+def getMetaDataAndIndex(track: mido.MidiTrack):
     """
-    Returns a list of meta messages that occur before the first non-meta message
+    Teturn metadata as a list of messages, AND the index of the first non-metadata message.
+    We assume that a track's metaData is the collection of metaMessages that occur before the first non-meta message, excluding the end of track message.
     """
-    metaData = []
     if len(track) == 0:
         return []
+    
+    metaData = []
     i = 0
     while isinstance(track[i], mido.MetaMessage) and track[i].time == 0:
+        # if we encounter an end of track message, return the metaData
+        if track[i].type == END_OF_TRACK:
+            break
         metaData.append(track[i])
         if i + 1 == len(track):
             break
         i += 1
-    return metaData
+    return metaData, i
 
 def getTrackWithoutBeginningMetaData(track: mido.MidiTrack):
     """
     Returns a track without the meta messages that occur before the first non-meta message
     """
-    i = 0
-    while isinstance(track[i], mido.MetaMessage):
-        i += 1
+    _, i = getMetaDataAndIndex(track)
     return track[i:]
 
-def mergeTracks(track1, track2, channel: int):
+def mergeMultipleTracks(trackWithMetaData, noteTracks) -> mido.MidiTrack:
     """
-    Merge two midi tracks; aka combines the messages of both tracks into a single track.
-    Keeps track1's metadata
+    Merges tracks into a single track, fixing all messages to the same channel.
+    The metadata in trackWithMetaData will be used for the final merged track.
+    For note tracks, all messages other than note_on or note_off will be skipped.
     """
-    def getMidiMessagesWithAbsTime(track, withMetaData, channel):
-        """
-        returns the midi messages of a track as a list of tuples (absoluteTime, message). Fix the given channel for all messages.
-        """
-        absoluteTime = 0
-        trackEvents = []
-        firstNonMetaMessageFound = False
-        for msg in track:
-            # once we've reached the first non-meta message, any other MetaMessage is no longer considered metadata
-            metaMessageAllowed = withMetaData or firstNonMetaMessageFound
-            if isinstance(msg, mido.MetaMessage):
-                if metaMessageAllowed:
-                    trackEvents.append((absoluteTime, msg))
-            else:
-                if msg.channel != channel:
-                    msg.channel = channel
-                firstNonMetaMessageFound = True
-                absoluteTime += msg.time
-                trackEvents.append((absoluteTime, msg))
-        return trackEvents
+    mergedAbsTrack = AbsoluteTimeTrack(trackWithMetaData)
+    for noteTrack in noteTracks:
+        noteAbsTrack = AbsoluteTimeTrack(noteTrack)
+        noteAbsTrack = getNoteMessagesAbsTrack(noteAbsTrack, includeEndOfTrack=True)
+        mergedAbsTrack = mergeAbsoluteTimeTracks(mergedAbsTrack, noteAbsTrack)
+    return mergedAbsTrack.toMidiTrack()
 
-    def mergeSortedEvents(messageList1, messageList2):
-        mergedMesssages = []
-        i, j = 0, 0
-
-        while i < len(messageList1) and j < len(messageList2):
-            if messageList1[i][0] <= messageList2[j][0]:
-                mergedMesssages.append(messageList1[i])
-                i += 1
-            # if there is an absolute time tie, prioritize note-offs and non end-of-track meta messages
-            # if there are still ties after this, prioritize messages from events1
-            elif messageList1[i][0] == messageList2[j][0]:
-                m1 = messageList1[i][1]
-                m2 = messageList2[j][1]
-                if m1.type == 'end_of_track':
-                    mergedMesssages.append(messageList2[j])
-                    j += 1
-                elif m1.type == "note_off":
-                    mergedMesssages.append(messageList1[i])
-                    i += 1
-                elif m2.type == "note_off":
-                    mergedMesssages.append(messageList2[j])
-                    j += 1
-                else:
-                    mergedMesssages.append(messageList1[i])
-                    i += 1
-            else:
-                mergedMesssages.append(messageList2[j])
-                j += 1
-        
-        # Add any remaining events from either list
-        mergedMesssages.extend(messageList1[i:])
-        mergedMesssages.extend(messageList2[j:])
-        return mergedMesssages
-
-    messageList1 = getMidiMessagesWithAbsTime(track1, withMetaData=True, channel=channel)
-    messageList2 = getMidiMessagesWithAbsTime(track2, withMetaData=False, channel=channel)
-
-    # if the second track does not contain any non-meta messsages, return the first track
-    if not messageList2:
-        return track1
-
-    # from the two messageLists, keep the end of track message with the greatest absolute time.
-    endOfTime1 = messageList1[-1]
-    endOfTime2 = messageList2[-1]
-    # make sure that we're actually dealing with end of track messages
-    assert endOfTime1[1].type == "end_of_track", f"Track merging error: Last message in messageList1 is not end-of-track. Last message :{endOfTime1}"
-    assert endOfTime2[1].type == "end_of_track", f"Track merging error: Last message in messageList2 is not end-of-track. Last message :{endOfTime2}"
-    
-    if endOfTime1[0] < endOfTime2[0]: # compare absolute times
-        messageList1.pop(-1)
-    else:
-        messageList2.pop(-1)
-
-    mergedEvents = mergeSortedEvents(messageList1, messageList2)
-
-    mergedTrack = mido.MidiTrack()
-    lastTime = 0
-    for absoluteTime, msg in mergedEvents:
-        deltaTime = absoluteTime - lastTime
-        lastTime = absoluteTime
-        newMsg = msg.copy(time=deltaTime)
-        mergedTrack.append(newMsg)
-
-    return mergedTrack
-
-def mergeMultipleTracks(tracks: list, channel=9):
+def allMessagesToChannel(track: mido.MidiTrack, channel: int):
     """
-    Merges multiple tracks into a single track, fixing all messages to the same channel.
-    The beginning metadata in tracks[0] will be used for the final merged track; all other
-    metadata will be skipped.
+    Changes the channel of all messages in the track to the given channel
     """
-    mergedTrack = tracks[0]
-    for i in range(1, len(tracks)):
-        mergedTrack = mergeTracks(mergedTrack, tracks[i], channel=channel)
-    return mergedTrack
+    for msg in track:
+        if isinstance(msg, mido.Message):
+            msg.channel = channel
 
 def concatenateTracks(track1: mido.MidiTrack, track2: mido.MidiTrack):
     """
@@ -320,7 +235,7 @@ def concatenateTracks(track1: mido.MidiTrack, track2: mido.MidiTrack):
     # concatenate track 2, removing its beginning metadata
     newTrack.extend(getTrackWithoutBeginningMetaData(track2))
     # add end of track message
-    newTrack.append(mido.MetaMessage('end_of_track'))
+    newTrack.append(mido.MetaMessage(END_OF_TRACK))
     return newTrack
 
 def concatenateMidiFiles(sourceDir: str, outputDir: str):
@@ -329,11 +244,11 @@ def concatenateMidiFiles(sourceDir: str, outputDir: str):
     """
     files = [f for f in os.listdir(sourceDir) if ".mid" in f]
     firstMid = mido.MidiFile(f"{sourceDir}/{files[0]}")
-    concatTrack = getBeginningMetaData(firstMid.tracks[0])
+    concatTrack = getMetaDataAndIndex(firstMid.tracks[0])
     for f in files:
         mid = mido.MidiFile(f"{sourceDir}/{f}")
         concatTrack = concatenateTracks(concatTrack, mid.tracks[0])
-    concatTrack.append(mido.MetaMessage('end_of_track'))
+    concatTrack.append(mido.MetaMessage(END_OF_TRACK))
     
     newMid = mido.MidiFile(ticks_per_beat=firstMid.ticks_per_beat)
     newMid.tracks.append(concatTrack)
@@ -371,9 +286,8 @@ def isTrackEmpty(track : mido.MidiTrack):
 
 def hasMetaData(track : mido.MidiTrack):
     """
-    If the first message is a meta message of time zero, then this track contains metaData
+    If the first message of a track is a meta message of time zero, then this track contains metaData
     """
-    
     message = track[0]
     if isinstance(message, mido.MetaMessage) and message.time == 0:
         return True

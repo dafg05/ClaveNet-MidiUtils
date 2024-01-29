@@ -115,6 +115,23 @@ def testHasMetaData():
     print(f"FirstTrack SHOULD have meta data. Does it? {helpers.hasMetaData(firstTrack)}")
     print(f"SecondTrack should NOT have metadata. Does it? {helpers.hasMetaData(secondTrack)}")
 
+def testMergeMultipleTracks():
+    mid1 = mido.MidiFile(TEST_MERGEE_1)
+    mid2 = mido.MidiFile(TEST_MERGEE_2)
+    mid3 = mido.MidiFile(TEST_MERGEE_3)
+
+    track1 = mid1.tracks[0]
+    track2 = mid2.tracks[0]
+    track3 = mid3.tracks[0]
+
+    noteTracks = [track2, track3]
+
+    mergedTrack = mergeMultipleTracks(trackWithMetaData=track1, noteTracks=noteTracks)
+    print(f"Merged track is:\n{mergedTrack}")
+    mid1.tracks[0] = mergedTrack
+    mid1.save(TEST_MULTIPLE_MERGED_OUT)
+    print(f"Saved to {TEST_MULTIPLE_MERGED_OUT}")
+
 if __name__ == "__main__":
     # testMergeTracks()
     # testSplitIntoBars
@@ -123,5 +140,6 @@ if __name__ == "__main__":
     # testGetTrackWithoutBeginningMetadata()
     # testConcatenateTracks()
     # testEndTime()
-    testTrimMidiFile()
+    # testTrimMidiFile()
     # testHasMetaData()
+    testMergeMultipleTracks()
