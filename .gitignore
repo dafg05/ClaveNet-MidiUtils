@@ -3,17 +3,20 @@
 
 __pycache__
 venv
-midi/augOutput/*
-midi/augSource/*
-midi/examples/old
-midi/separate/*
-midi/split/*
-midi/whole/*
+data/augOutput/*
+data/augSource/*
+data/examples/old
+data/separate/*
+data/split/*
+data/whole/*
 
-!midi/augOutput/test
-!midi/augSource/test
-!midi/examples/test
-midi/test/out/*
+!data/augOutput/test
+!data/augSource/test
+!data/examples/test
+data/test/out/*
 
-midi/augOutput/test/*
-midi/examples/test/out/*
+data/augOutput/test/*
+data/examples/test/out/*
+
+tests/testData/augOutput/*
+tests/testData/absTrackOutput/*

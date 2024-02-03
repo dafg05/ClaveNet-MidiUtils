@@ -1,5 +1,5 @@
 from midiUtils.constants import *
-from midiUtils.absTrack import AbsoluteTimeTrack, AbsoluteTimeMidiMessage, getMidiTrackExcludingPitches, getMidiTrackIncludingPitches, mergeAbsoluteTimeTracks, getNoteMessagesAbsTrack
+from midiUtils.absTrack import AbsoluteTimeTrack
 
 import math
 import mido
@@ -26,16 +26,6 @@ def splitMidiTrackIntoBars(track: mido.MidiTrack, barStep: int, beatsPerBar: int
         midiSlicesTracks.append(midiSliceTrack)
     
     return midiSlicesTracks
-
-def trimMidiTrack(track: mido.MidiTrack, startBar: int, endBar: int, beatsPerBar: int, ticksPerBeat: int):
-    """
-    TODO: refactor to use absTrack
-    """
-    metaData = getMetaDataAndIndex(track)
-
-    startTime = startBar * beatsPerBar * ticksPerBeat
-    endTime = endBar * beatsPerBar * ticksPerBeat
-    return getMidiSlice(track, startTime, endTime, metaData)
 
 def getMidiSlice(track: mido.MidiTrack, startTime: int, endTime, metaData: list = None):
     """Extracts midi events from startTime to endTime into a new track
@@ -141,20 +131,6 @@ def getMidiSlice(track: mido.MidiTrack, startTime: int, endTime, metaData: list 
     closeMidiTrack(newTrack)
     return newTrack
 
-def getTrackWithSelectPitches(track: mido.MidiTrack, pitches: list) -> mido.MidiTrack:
-    """
-    Returns a midi track that containing only the specified pitches of the original track
-    """
-    trackTools = AbsoluteTimeTrack(track)
-    return trackTools.getTrackIncludingPitches(pitches)
-
-def deletePitches(track: mido.MidiTrack, pitches: list):
-    """
-    Deletes all messages with the specified pitches from the track
-    """
-    trackTools = AbsoluteTimeTrack(track)
-    return trackTools.getTrackExcludingPitches(pitches)
-
 def change_midi_tempo(midi_file_path, new_tempo):
     # Load the MIDI file
     mid = mido.MidiFile(midi_file_path)
@@ -174,7 +150,6 @@ def change_midi_tempo(midi_file_path, new_tempo):
     new_mid.save(midi_file_path)
 
     return midi_file_path
-
 
 def getMetaDataAndIndex(track: mido.MidiTrack):
     """
@@ -202,27 +177,6 @@ def getTrackWithoutBeginningMetaData(track: mido.MidiTrack):
     """
     _, i = getMetaDataAndIndex(track)
     return track[i:]
-
-def mergeMultipleTracks(trackWithMetaData, noteTracks) -> mido.MidiTrack:
-    """
-    Merges tracks into a single track, fixing all messages to the same channel.
-    The metadata in trackWithMetaData will be used for the final merged track.
-    For note tracks, all messages other than note_on or note_off will be skipped.
-    """
-    mergedAbsTrack = AbsoluteTimeTrack(trackWithMetaData)
-    for noteTrack in noteTracks:
-        noteAbsTrack = AbsoluteTimeTrack(noteTrack)
-        noteAbsTrack = getNoteMessagesAbsTrack(noteAbsTrack, includeEndOfTrack=True)
-        mergedAbsTrack = mergeAbsoluteTimeTracks(mergedAbsTrack, noteAbsTrack)
-    return mergedAbsTrack.toMidiTrack()
-
-def allMessagesToChannel(track: mido.MidiTrack, channel: int):
-    """
-    Changes the channel of all messages in the track to the given channel
-    """
-    for msg in track:
-        if isinstance(msg, mido.Message):
-            msg.channel = channel
 
 def concatenateTracks(track1: mido.MidiTrack, track2: mido.MidiTrack):
     """
@@ -259,30 +213,6 @@ def getEndTime(track: mido.MidiTrack):
     for m in track:
         absTime += m.time
     return absTime
-
-def getPitches(percPart: str) -> list:
-    """
-    Returns a list of pitches that correspond to the given percPart
-    Hardcoded.
-    """
-    if percPart == "sna":
-        return SNA_NOTES
-    if percPart == "toms":
-        return TOM_NOTES
-    if percPart == "kick":
-        return KICK_NOTES
-    if percPart == "cym":
-        return CYM_NOTES
-    return []
-
-def isTrackEmpty(track : mido.MidiTrack):
-    """
-    Returns true if the track is empty, aka if it has any note on messages.
-    """
-    for m in track:
-        if isinstance(m, mido.Message) and m.type == 'note_on':
-            return False
-    return True
 
 def hasMetaData(track : mido.MidiTrack):
     """

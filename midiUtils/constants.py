@@ -22,7 +22,7 @@ SNA_NOTES = [32,34,37,38,39,40]
 CYM_NOTES = [33,31,42,44,46,51,52,53,56,57,59]
 TOM_NOTES = [41,43,45,47,48,50]
 
-PERC_PARTS = ["kick", "sna", "cym", "tom"]
+PERC_VOICES = ["kick", "sna", "cym", "tom"]
 
 TEST_MIDI_FILE = TEST_SOURCE_DIR + "/1_rock_110_beat_4-4_slice_208.mid"
 TEST_EXCLUDE_OUT = TEST_OUTPUT_DIR + "/exclude_pitches.mid"

@@ -3,6 +3,7 @@ import sys
 import os
 
 from pretty_midi import PrettyMIDI
+from midiUtils.constants import TEST_SOURCE_DIR, TEST_OUTPUT_DIR
 
 SR = 44100
 SF_PATH = os.path.dirname(__file__) + "/Standard_Drum_Kit.sf2"
@@ -30,6 +31,3 @@ def getFilename(midi_path):
     filename = midi_path.split("/")[-1]
     filename = filename.split(".")[0]
     return filename
-
-if __name__ == "__main__":
-    print(SF_PATH)

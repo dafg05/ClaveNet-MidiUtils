@@ -3,29 +3,32 @@ import mido
 
 from midiUtils.constants import *
 from midiUtils import helpers
+from midiUtils import tools
+
 from typing import List
+from collections import Counter
 
 class AugExample:
     def __init__(self, midi_path, style):
         self.midi_path = midi_path
         self.style = style
 
-    def getPart(self, part) -> mido.MidiTrack():
+    def getVoice(self, voice) -> mido.MidiTrack():
         """
-        Returns a midi track that contains only the specified part
+        Returns a midi track that contains only the specified voice
         """
-        pitches = helpers.getPitches(part)
+        pitches = tools.getPitches(voice)
         mid = mido.MidiFile(self.midi_path)
         track = mid.tracks[0]
     
-        return helpers.getTrackWithSelectPitches(track, pitches)
+        return tools.getTrackWithSelectPitches(track, pitches)
     
-    def hasPart(self, part) -> bool:
+    def hasVoice(self, voice) -> bool:
         """
-        Returns true if the example has the specified part
+        Returns true if the example has the specified voice
         """
-        track = self.getPart(part)
-        return not helpers.isTrackEmpty(track)
+        track = self.getVoice(voice)
+        return not tools.isTrackEmpty(track)
 
     def __str__(self) -> str:
         return f'AugExample of style "{self.style}" at midi_path: "{self.midi_path}"'
@@ -70,6 +73,10 @@ class AugExamplesRetriever:
                 outOfStyleExamples.extend(self.examplesDict[s])
         return outOfStyleExamples
     
+    def getVoiceCounts(self) -> Counter:
+        # TODO: implement this
+        raise NotImplementedError
+    
     def __str__(self) -> str:
         return f'AugExamplesRetriever with styles {self.styles}, at dir "{self.dir}"'
     
@@ -103,12 +110,12 @@ if __name__ == "__main__":
     print(f"midiPath test: {augExample.midi_path}")
     # style test
     print(f"style test: {augExample.style}")
-    # hasPart test
-    print(f"does augExample have kick part? {augExample.hasPart('kick')}")
-    print(f"does augExample have tom part? {augExample.hasPart('tom')}")
-    # getPart test
+    # hasVoice test
+    print(f"does augExample have kick voice? {augExample.hasVoice('kick')}")
+    print(f"does augExample have tom voice? {augExample.hasVoice('tom')}")
+    # getVoice test
     mid = mido.MidiFile()
-    mid.tracks.append(augExample.getPart("kick"))
+    mid.tracks.append(augExample.getVoice("kick"))
     mid.save(f"{testDir}/out/augExampleSongoKick.mid")
     print(f"saved augExampleSongoKick.mid")
     
