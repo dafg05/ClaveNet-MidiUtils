@@ -2,7 +2,6 @@ import os
 import mido
 
 from midiUtils.constants import *
-from midiUtils import helpers
 from midiUtils import tools
 
 from typing import List
@@ -13,7 +12,7 @@ class AugExample:
         self.midi_path = midi_path
         self.style = style
 
-    def getVoice(self, voice) -> mido.MidiTrack():
+    def __getVoiceTrack(self, voice) -> mido.MidiTrack():
         """
         Returns a midi track that contains only the specified voice
         """
@@ -21,13 +20,21 @@ class AugExample:
         mid = mido.MidiFile(self.midi_path)
         track = mid.tracks[0]
     
-        return tools.getTrackWithSelectPitches(track, pitches)
+        return tools.getTrackWithSelectPitches(track, pitches, notesOnly=True)
+
+    def getVoice(self, voice) -> mido.MidiTrack():
+        """
+        Returns a midi track that contains only the specified voice
+        """
+        if not self.hasVoice(voice):
+            return mido.MidiTrack()
+        return self.__getVoiceTrack(voice)
     
     def hasVoice(self, voice) -> bool:
         """
         Returns true if the example has the specified voice
         """
-        track = self.getVoice(voice)
+        track = self.__getVoiceTrack(voice)
         return not tools.isTrackEmpty(track)
 
     def __str__(self) -> str:
@@ -79,48 +86,3 @@ class AugExamplesRetriever:
     
     def __str__(self) -> str:
         return f'AugExamplesRetriever with styles {self.styles}, at dir "{self.dir}"'
-    
-if __name__ == "__main__":
-
-    testDir = f"{EXAMPLES_DIR}/test"
-
-    # retriever constructor test
-    augExamplesRetriever = AugExamplesRetriever(testDir)
-    print(f"constructing aer: {augExamplesRetriever}")
-
-    # styles test
-    print(f"styles test: {augExamplesRetriever.styles}")
-
-    # getExamplesByStyle test
-    l = augExamplesRetriever.getExamplesByStyle('mambo')
-    print("getExamplesByStyle test (using mambo as style):")
-    for e in l:
-        print(e)
-
-    # getExamplesOutOfStyle test
-    l = augExamplesRetriever.getExamplesOutOfStyle('songo')
-    print("getExamplesOutOfStyle test (using songo as style):")
-    for e in l:
-        print(e)
-
-    # aug example constructor test
-    augExample = augExamplesRetriever.getExamplesByStyle("songo")[0]
-    print(f"now testing augExample: {augExample}")
-    # midiPath test
-    print(f"midiPath test: {augExample.midi_path}")
-    # style test
-    print(f"style test: {augExample.style}")
-    # hasVoice test
-    print(f"does augExample have kick voice? {augExample.hasVoice('kick')}")
-    print(f"does augExample have tom voice? {augExample.hasVoice('tom')}")
-    # getVoice test
-    mid = mido.MidiFile()
-    mid.tracks.append(augExample.getVoice("kick"))
-    mid.save(f"{testDir}/out/augExampleSongoKick.mid")
-    print(f"saved augExampleSongoKick.mid")
-    
-    
-
-
-
-

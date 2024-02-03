@@ -28,18 +28,20 @@ def isTrackEmpty(track : mido.MidiTrack):
             return False
     return True
 
-def deletePitches(track: mido.MidiTrack, pitches: list):
+def deletePitches(track: mido.MidiTrack, pitches: list) -> mido.MidiTrack:
     """
     Deletes all messages with the specified pitches from the track
     """
     att = AbsoluteTimeTrack(track)
     return att.getMidiTrackExcludingPitches(pitches)
 
-def getTrackWithSelectPitches(track: mido.MidiTrack, pitches: list) -> mido.MidiTrack:
+def getTrackWithSelectPitches(track: mido.MidiTrack, pitches: list, notesOnly: bool=False) -> mido.MidiTrack:
     """
     Returns a midi track that containing only the specified pitches of the original track
     """
     att = AbsoluteTimeTrack(track)
+    if notesOnly:
+        att = AbsoluteTimeTrack.getNoteMessagesAbsTrack(att, includeEndOfTrack=True)
     return att.getMidiTrackIncludingPitches(pitches)
 
 def mergeMultipleTracks(trackWithMetaData: mido.MidiTrack, noteTracks) -> mido.MidiTrack:
