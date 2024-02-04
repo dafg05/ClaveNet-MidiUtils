@@ -61,7 +61,7 @@ def trimMidiTrack(track: mido.MidiTrack, startBar: int, endBar: int, beatsPerBar
     """
     Trims a midi track to the specified bars.
     """
-    metaData = helpers.getMetaDataAndIndex(track)
+    metaData, _ = helpers.getMetaDataAndIndex(track)
 
     startTime = startBar * beatsPerBar * ticksPerBeat
     endTime = endBar * beatsPerBar * ticksPerBeat

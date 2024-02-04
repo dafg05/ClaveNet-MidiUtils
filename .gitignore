@@ -20,3 +20,4 @@ data/examples/test/out/*
 
 tests/testData/augOutput/*
 tests/testData/absTrackOutput/*
+tests/testData/toolsOutput/*
