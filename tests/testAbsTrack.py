@@ -120,9 +120,9 @@ def test_get_note_messages_abs_track():
     print(f"test_get_note_messages_abs_track passed!")
 
 if __name__ == '__main__':
-    random.seed = SEED
-
     clearDir(OUTPUT_DIR)
+
+    random.seed = SEED
 
     test_exclude_pitches()
     test_exclude_pitches_no_changes()

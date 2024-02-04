@@ -1,4 +1,5 @@
 from tests.constants import *
+from tests.utils import *
 
 from midiUtils.tools import *
 
@@ -69,6 +70,8 @@ def test_allMessagesToChannel():
     print("allMessagesToChannel passed")
 
 if __name__ == "__main__":
+    clearDir(OUTPUT_DIR)
+
     test_isTrackEmpty()
     test_mergeMultipleTracks()
     test_trimMidiTrack()

@@ -3,20 +3,6 @@
 
 __pycache__
 venv
-data/augOutput/*
-data/augSource/*
-data/examples/old
-data/separate/*
-data/split/*
-data/whole/*
-
-!data/augOutput/test
-!data/augSource/test
-!data/examples/test
-data/test/out/*
-
-data/augOutput/test/*
-data/examples/test/out/*
 
 tests/testData/augOutput/*
 tests/testData/absTrackOutput/*

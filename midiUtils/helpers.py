@@ -5,6 +5,12 @@ import math
 import mido
 import os
 
+"""
+A lot of these fuctions are not used in the current version of the project.
+Furthermore, most of these are untested. 
+TODO: tests functions, delete unnecessary ones.
+"""
+
 def splitMidiTrackIntoBars(track: mido.MidiTrack, barStep: int, beatsPerBar: int,  ticksPerBeat: int):
     """
     TODO: refactor to use absTrack
