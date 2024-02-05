@@ -10,6 +10,7 @@ setup(
     long_description_content_type='text/markdown',
     url='https://github.com/dafg05/midiutils',
     packages=find_packages(),
+    # scripts=['scripts/unzipExamples.py'],
     install_requires=[
         "numpy",
         "mido"

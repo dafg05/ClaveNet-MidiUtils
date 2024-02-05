@@ -16,7 +16,7 @@ def testAugScheme_InStyle():
 
     styleParams = {"preferredStyle": "songo", "outOfStyleProb": 0.0}
     suffix = '_inStyle'
-    dataAug.augmentationScheme(SOURCE_DIR, OUTPUT_DIR, EXAMPLES_DIR, styleParams, suffix=suffix ,numTransformations = 2, fixedVoicesToReplace = FIXED_VOICES_TO_REPLACE, seed=SEED, debug=True)
+    dataAug.augmentationScheme(SOURCE_DIR, OUTPUT_DIR, EXAMPLES_DIR, styleParams, suffix=suffix ,numTransformations = 2, fixedVoicesToReplace = FIXED_VOICES_TO_REPLACE, random_seed=SEED, debug=True)
     print(f"Output files written with suffix {suffix} in the directory {OUTPUT_DIR}")
     
 def testAugScheme_OutOfStyle():
@@ -25,7 +25,7 @@ def testAugScheme_OutOfStyle():
 
     styleParams = {"preferredStyle": "songo", "outOfStyleProb": 1.0}
     suffix = '_outOfStyle'
-    dataAug.augmentationScheme(SOURCE_DIR, OUTPUT_DIR, EXAMPLES_DIR, styleParams, suffix=suffix, numTransformations = 2, fixedVoicesToReplace = FIXED_VOICES_TO_REPLACE, seed=SEED,debug=True)
+    dataAug.augmentationScheme(SOURCE_DIR, OUTPUT_DIR, EXAMPLES_DIR, styleParams, suffix=suffix, numTransformations = 2, fixedVoicesToReplace = FIXED_VOICES_TO_REPLACE, random_seed=SEED,debug=True)
     print(f"Output files written with suffix {suffix} in the directory {OUTPUT_DIR}")
 
 def testAugScheme_WithOutOfStyleProb():
@@ -34,7 +34,7 @@ def testAugScheme_WithOutOfStyleProb():
 
     styleParams = {"preferredStyle": "songo", "outOfStyleProb": 0.5}
     suffix = '_withOutOfStyleProb'
-    dataAug.augmentationScheme(SOURCE_DIR, OUTPUT_DIR, EXAMPLES_DIR, styleParams, suffix=suffix, numTransformations = 2, numReplacements=2, seed=SEED,debug=True)
+    dataAug.augmentationScheme(SOURCE_DIR, OUTPUT_DIR, EXAMPLES_DIR, styleParams, suffix=suffix, numTransformations = 2, numReplacements=2, random_seed=SEED,debug=True)
     print(f"Output files written with suffix {suffix} in the directory {OUTPUT_DIR}")
 
 if __name__ == '__main__':

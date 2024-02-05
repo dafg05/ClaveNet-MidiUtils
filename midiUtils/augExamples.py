@@ -7,7 +7,7 @@ from midiUtils import tools
 from typing import List
 from collections import Counter
 
-class AugExample:
+class AugSeedExample:
     def __init__(self, midi_path, style):
         self.midi_path = midi_path
         self.style = style
@@ -40,7 +40,7 @@ class AugExample:
     def __str__(self) -> str:
         return f'AugExample of style "{self.style}" at midi_path: "{self.midi_path}"'
 
-class AugExamplesRetriever:
+class SeedExamplesRetriever:
     def __init__(self, dir):
         # dir
         self.dir = dir
@@ -52,27 +52,27 @@ class AugExamplesRetriever:
                 styleSet.add(style)
         self.styles = list(styleSet)
         if len(self.styles) < 2:
-            raise Exception(f"Must have at least 2 styles in {dir} to construct AugExamplesRetriever.")
+            raise Exception(f"Must have at least 2 styles in {dir} to construct SeedExamplesRetriever.")
         
         # examplesDict
         self.examplesDict = {style: [] for style in self.styles}
         for f in os.listdir(dir):
             if f.endswith(".mid"):
                 style = f.split("_")[0]
-                augExample = AugExample(midi_path=f"{dir}/{f}", style=style)
+                augExample = AugSeedExample(midi_path=f"{dir}/{f}", style=style)
                 self.examplesDict[style].append(augExample)         
 
-    def getExamplesByStyle(self, style) -> List[AugExample]:
+    def getExamplesByStyle(self, style) -> List[AugSeedExample]:
         """
-        Returns a list of AugExamples given a style
+        Returns a list of AugSeedExamples given a style
         """
         if style not in self.styles:
             return []
         return self.examplesDict[style]
     
-    def getExamplesOutOfStyle(self, style) -> List[AugExample]:
+    def getExamplesOutOfStyle(self, style) -> List[AugSeedExample]:
         """
-        Returns a list of AugExamples that are not of the specified style
+        Returns a list of AugSeedExamples that are not of the specified style
         """
         outOfStyleExamples = []
         for s in self.styles:
@@ -85,4 +85,4 @@ class AugExamplesRetriever:
         raise NotImplementedError
     
     def __str__(self) -> str:
-        return f'AugExamplesRetriever with styles {self.styles}, at dir "{self.dir}"'
+        return f'SeedExamplesRetriever with styles {self.styles}, at dir "{self.dir}"'

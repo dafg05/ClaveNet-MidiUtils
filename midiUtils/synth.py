@@ -3,7 +3,6 @@ import sys
 import os
 
 from pretty_midi import PrettyMIDI
-from midiUtils.constants import TEST_SOURCE_DIR, TEST_OUTPUT_DIR
 
 SR = 44100
 SF_PATH = os.path.dirname(__file__) + "/Standard_Drum_Kit.sf2"

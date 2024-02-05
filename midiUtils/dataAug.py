@@ -1,6 +1,6 @@
 from midiUtils.constants import *
 from midiUtils import tools
-from midiUtils.augExamples import AugExamplesRetriever
+from midiUtils.augExamples import SeedExamplesRetriever
 from typing import List
 
 import mido
@@ -9,7 +9,7 @@ import random
 import copy
 import numpy as np
 
-def augmentationScheme(sourceDir: str, outputDir: str, examplesDir: str, styleParams: dict, suffix: int='', numTransformations: int=1, fixedVoicesToReplace: List[str]=None, numReplacements: int=1, seed: int=0, debug: bool=False):
+def augmentationScheme(sourceDir: str, outputDir: str, seedExamplesDir: str, styleParams: dict, suffix: int='', numTransformations: int=1, fixedVoicesToReplace: List[str]=None, numReplacements: int=1, random_seed: int=0, debug: bool=False):
     """
     For every midi file in sourceDir, computes NUM_TRANSFORMATIONS transformed midi files
     and saves them in the outputDir. 
@@ -18,21 +18,21 @@ def augmentationScheme(sourceDir: str, outputDir: str, examplesDir: str, stylePa
     param
     - sourceDir: dir that contains files to transform
     - outputDir: dir that will contain transformations + unaltered files
-    - examplesdir: dir that contains the examples to use for transformations
+    - seedExamplesdir: dir that contains the seed examples to use for transformations
     - styleParams: keys are "preferredStyle" and "outOfStyleProb". 
     - sufix: to append to the output file name
     - numTransformations: number of transformations to compute for each midi file, not including the original
     - fixedVoicesToReplace: If specified, denotes the exact percussion voices that will be replaced. Else,
     voices to replace will be randomly computed.
-    - seed: random seed
+    - ramdom_seed: random seed
     - numReplacements: If fixedVoicesToReplace is not specified, then this denotes the number of 
     randomly chosen voices to replace. Else, this parameter is ignored.
     - debug: if true, prints debug info
     """
 
-    random.seed(seed)
+    random.seed(random_seed)
 
-    augExamplesRetriever = AugExamplesRetriever(dir=examplesDir)
+    ser = SeedExamplesRetriever(dir=seedExamplesDir)
     for f in os.listdir(sourceDir):
         # Skip non-midi files
         if ".mid" not in f:
@@ -43,10 +43,10 @@ def augmentationScheme(sourceDir: str, outputDir: str, examplesDir: str, stylePa
             voicesToReplace = getVoicesToReplace(fixedVoicesToReplace, numReplacements)
             trackIndex = 0
 
-            newMid = transformMidiFile(mid, trackIndex, voicesToReplace, augExamplesRetriever, styleParams, debug)
+            newMid = transformMidiFile(mid, trackIndex, voicesToReplace, ser, styleParams, debug)
             newMid.save(f"{outputDir}/{f}_tra-{i:02d}{suffix}.mid")
 
-def transformMidiFile(mid: mido.MidiFile, trackIndex: int, voicesToReplace: list, augExamplesRetriever: AugExamplesRetriever, styleParams: dict, debug=False) -> mido.MidiFile:
+def transformMidiFile(mid: mido.MidiFile, trackIndex: int, voicesToReplace: list, ser: SeedExamplesRetriever, styleParams: dict, debug=False) -> mido.MidiFile:
     """
     Transforms a midi file by probably replacing the specified voices with voices from the given style;
     otherwise replaces with voices from a different style.
@@ -55,7 +55,7 @@ def transformMidiFile(mid: mido.MidiFile, trackIndex: int, voicesToReplace: list
     mid: Original midifile
     trackIndex: the miditrack the replacement algorithm will be run
     voicesToReplace: strings denoting the voices that should be replaced
-    augExamplesRetriever: object to facilitate choosing replacement tracks
+    ser: object to facilitate choosing replacement tracks
     styleParams: keys are "preferredStyle" and "outOfStyleProb". 
 
     returns
@@ -69,7 +69,7 @@ def transformMidiFile(mid: mido.MidiFile, trackIndex: int, voicesToReplace: list
     outOfStyleProb = styleParams["outOfStyleProb"]
 
     if preferredStyle == "":
-        preferredStyle = random.choice(augExamplesRetriever.styles)
+        preferredStyle = random.choice(ser.styles)
 
     # delete voices to replace from original track
     pitchesToDelete = []
@@ -80,7 +80,7 @@ def transformMidiFile(mid: mido.MidiFile, trackIndex: int, voicesToReplace: list
     # we'll merge the replacements into the original track
     noteTracks = []
     for voice in voicesToReplace:
-        noteTracks.append(getReplacementTrack(voice, preferredStyle, outOfStyleProb, augExamplesRetriever))
+        noteTracks.append(getReplacementTrack(voice, preferredStyle, outOfStyleProb, ser))
     
     # actually merge tracks
     newTrack = tools.mergeMultipleTracks(trackWithMetaData=oldTrack, noteTracks=noteTracks)
@@ -91,9 +91,9 @@ def transformMidiFile(mid: mido.MidiFile, trackIndex: int, voicesToReplace: list
     
     return transformedMid
 
-def getReplacementTrack(percVoice: str, preferredStyle: str, outOfStyleProb: int, augExamplesRetriever: AugExamplesRetriever) -> mido.MidiTrack:
+def getReplacementTrack(percVoice: str, preferredStyle: str, outOfStyleProb: int, ser: SeedExamplesRetriever) -> mido.MidiTrack:
     """
-    Gets a replacement voice (midi track) using the augExamplesRetriever.
+    Gets a replacement voice (midi track) using the seedExamplesRetriever.
     With a probability of (1-outOfStyleProb), the replacement voice will be from the given style.
     Note that we don't care if the replacement voice is empty or not.
 
@@ -101,19 +101,19 @@ def getReplacementTrack(percVoice: str, preferredStyle: str, outOfStyleProb: int
     percVoice: string denoting the voice to replace
     preferredStyle: style of the replacement voice
     outOfStyleProb: probability that the replacement voice will be from a different style
-    augExamplesRetriever: object to facilitate choosing replacement tracks
+    ser: object to facilitate choosing replacement tracks
     """
 
     # ensure style is valid
-    if preferredStyle not in augExamplesRetriever.styles:
-        raise Exception(f"Style {preferredStyle} not found in augExamplesRetriever")
+    if preferredStyle not in ser.styles:
+        raise Exception(f"Style {preferredStyle} not found in seedExamplesRetriever.")
     
     r = random.random()
     # determine if we will use an out of style replacement
     if r > outOfStyleProb:
-        candidates = augExamplesRetriever.getExamplesByStyle(preferredStyle)
+        candidates = ser.getExamplesByStyle(preferredStyle)
     else:
-        candidates = augExamplesRetriever.getExamplesOutOfStyle(preferredStyle)
+        candidates = ser.getExamplesOutOfStyle(preferredStyle)
 
     assert len(candidates) > 0, f"No examples found for style {preferredStyle}"
     

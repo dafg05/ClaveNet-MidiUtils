@@ -1,17 +1,17 @@
 from tests.constants import *
 
-from midiUtils.augExamples import AugExamplesRetriever, AugExample
+from midiUtils.augExamples import SeedExamplesRetriever, AugSeedExample
 
 EXAMPLES_DIR = TEST_DATA_DIR + "/examples"
 AUG_EXAMPLE_PATH = EXAMPLES_DIR + '/songo_kit.mid'
 AUG_EXAMPLE_STYLE = 'songo'
 STYLES = ['songo', 'mambo']
-AER = AugExamplesRetriever(EXAMPLES_DIR)
+AER = SeedExamplesRetriever(EXAMPLES_DIR)
 
 def test_example():
     print("//////////////////////")
     print("Testing AugExample")
-    example = AugExample(midi_path=AUG_EXAMPLE_PATH, style=AUG_EXAMPLE_STYLE)
+    example = AugSeedExample(midi_path=AUG_EXAMPLE_PATH, style=AUG_EXAMPLE_STYLE)
     assert example.midi_path == AUG_EXAMPLE_PATH, f"Expected {AUG_EXAMPLE_PATH}, got {example.midi_path}"
     assert example.style == AUG_EXAMPLE_STYLE, f"Expected {AUG_EXAMPLE_STYLE}, got {example.style}"
 
