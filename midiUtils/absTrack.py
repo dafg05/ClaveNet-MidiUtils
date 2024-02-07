@@ -174,3 +174,45 @@ class AbsoluteTimeTrack():
             j, foundFirstEOT = conditionalAppend(newAbsTrack, absTrack2[j], j, foundFirstEOT)
         
         return newAbsTrack
+    
+    @staticmethod
+    def randomlyOffsetTime(noteTrack: AbsoluteTimeTrack, maxOffset: int) -> AbsoluteTimeTrack:
+        """
+        Asssumes that the given track is the return value of getNoteMessagesAbsTrack.
+        Randomly offset the times of the note messages in the track, but caps the offset amount so that the message order is preserved.
+        TODO: test me
+        """
+        newTrack = copy.deepcopy(noteTrack)
+        for i in range(newTrack):
+            currAm = newTrack[i]
+            if currAm.msg.type == END_OF_TRACK:
+                break
+            negativeOffset = random.choice([True, False])
+            offsetAmount = random.randrange(0, maxOffset)
+
+            # cap the offset in either the negative or positive direction
+            # to the absolute time of the previous or next message, respectively.
+            if negativeOffset:
+                prevMsgTime = 0 if i == 0 else newTrack[i-1].absTime # avoid a negative absolute time
+                distance = abs(currAm.absTime - prevMsgTime)
+                currAm.absTime -= min(offsetAmount, distance)
+            else:
+                # we need not worry about an index out of bounds error assuming our track has an end of time message.
+                nextMsgTime = newTrack[i+1].absTime 
+                distance = abs(currAm.absTime - nextMsgTime)
+                currAm.absTime += min(offsetAmount, distance)
+
+        return newTrack
+
+    @staticmethod
+    def randomlyOffsetVelocities(noteTrack: AbsoluteTimeTrack, maxOffset: int) -> AbsoluteTimeTrack:
+        """
+        Asssumes that the given track is the return value of getNoteMessagesAbsTrack.
+        Randomly offset the velocities of the note messages in the track.
+        TODO: test me
+        """
+        newTrack = copy.deepcopy(noteTrack)
+        for am in newTrack:
+            if isinstance(am.msg, mido.Message):
+                am.msg.velocity += random.randrange(-maxOffset, maxOffset+1)
+        return newTrack
