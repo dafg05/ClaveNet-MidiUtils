@@ -2,7 +2,7 @@ from setuptools import setup, find_packages
 
 setup(
     name='midiUtils',
-    version='0.1.13',
+    version='0.2.0',
     author='Daniel Flores Garcia',
     author_email='danialefloresg@gmail.com',
     description='Used for drum gen project.',
@@ -10,7 +10,6 @@ setup(
     long_description_content_type='text/markdown',
     url='https://github.com/dafg05/midiutils',
     packages=find_packages(),
-    # scripts=['scripts/unzipExamples.py'],
     install_requires=[
         "numpy",
         "mido"

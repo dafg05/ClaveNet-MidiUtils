@@ -19,4 +19,4 @@ def unzip_example(output_dir: str):
             print(f"Unzipped {resource_name} to {output_dir}")
 
 if __name__ == "__main__":
-    unzip_example(OUTPUT_DIR)
+    raise NotImplementedError("This script is a work in progress.")
