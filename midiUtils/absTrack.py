@@ -183,12 +183,12 @@ class AbsoluteTimeTrack():
         TODO: test me
         """
         newTrack = copy.deepcopy(noteTrack)
-        for i in range(newTrack):
+        for i in range(len(newTrack)):
             currAm = newTrack[i]
             if currAm.msg.type == END_OF_TRACK:
                 break
             negativeOffset = random.choice([True, False])
-            offsetAmount = random.randrange(0, maxOffset)
+            offsetAmount = random.randrange(0, maxOffset + 1)
 
             # cap the offset in either the negative or positive direction
             # to the absolute time of the previous or next message, respectively.

@@ -18,6 +18,8 @@ MERGEE_2 = SOURCE_DIR + "/mergee2.mid"
 MERGEE_3 = SOURCE_DIR + "/mergee3.mid"
 SIMPLE_MERGED_OUT = OUTPUT_DIR + "/merged_simple.mid"
 MULTIPLE_MERGED_OUT = OUTPUT_DIR + "/merged_multiple.mid"
+OFFSET_TIME_OUT = OUTPUT_DIR + "/offset_time.mid"
+OFFSET_VELOCITY_OUT = OUTPUT_DIR + "/offset_velocity.mid"
 
 TEST_PITCHES = [36,44] # kick and hihat foot close
 
@@ -117,7 +119,54 @@ def test_get_note_messages_abs_track():
     for am in noteAtt:
         m = am.msg
         assert m.type == NOTE_ON or m.type == NOTE_OFF or m.type == END_OF_TRACK, f"Message type is not note_on, note_off, or end_of_track. Message: {m}"
-    print(f"test_get_note_messages_abs_track passed!")
+    print(f"test_get_note_messages_abs_track passed!") 
+
+
+def test_randomly_offset_time():
+    print("///////////////////////////////////////////////")
+    print("Testing randomly_offset_time...")
+
+    mid = mido.MidiFile(MERGEE_3)
+    att = AbsoluteTimeTrack(mid.tracks[0])
+    offsetAmount = 10
+    originalNoteAtt = AbsoluteTimeTrack.getNoteMessagesAbsTrack(att, True)
+    offsetNoteAtt = AbsoluteTimeTrack.randomlyOffsetTime(originalNoteAtt, offsetAmount)
+
+    assert len(originalNoteAtt) == len(offsetNoteAtt), f"Length of noteAtt is not the same as the length of offsetNoteAtt. Length of noteAtt: {len(originalNoteAtt)}, length of offsetNoteAtt: {len(offsetNoteAtt)}"
+    for i in range(len(offsetNoteAtt)):
+        offsetTime = offsetNoteAtt[i].absTime
+        originalTime = originalNoteAtt[i].absTime
+        assert (offsetTime <= (originalTime + offsetAmount)) and (offsetTime >= (originalTime - offsetAmount)), f"Offset time is not within {offsetAmount} ticks of original time. Original time: {originalTime}, offset time: {offsetTime}"
+    print(f"As expected, times of offsetNoteAtt are within {offsetAmount} ticks of originalNoteAtt.")
+
+    track = offsetNoteAtt.toMidiTrack()
+    mid.tracks[0] = track
+    mid.save(OFFSET_TIME_OUT)
+    print(f"test_randomly_offset_time output must be inspected manually.")
+
+
+def test_randomly_offset_velocities():
+    print("///////////////////////////////////////////////")
+    print("Testing randomly_offset_velocities...")
+    mid = mido.MidiFile(MERGEE_3)
+    att = AbsoluteTimeTrack(mid.tracks[0])
+    offsetAmount = 10
+    originalNoteAtt = AbsoluteTimeTrack.getNoteMessagesAbsTrack(att, True)
+    offsetNoteAtt = AbsoluteTimeTrack.randomlyOffsetVelocities(originalNoteAtt, offsetAmount)
+
+    assert len(originalNoteAtt) == len(offsetNoteAtt), f"Length of noteAtt is not the same as the length of offsetNoteAtt. Length of noteAtt: {len(originalNoteAtt)}, length of offsetNoteAtt: {len(offsetNoteAtt)}"
+    for i in range(len(offsetNoteAtt)):
+        if isinstance(offsetNoteAtt[i].msg, mido.Message):
+            offsetVelocity = offsetNoteAtt[i].msg.velocity
+            originalVelocity = originalNoteAtt[i].msg.velocity
+            assert (offsetVelocity <= (originalVelocity + offsetAmount)) and (offsetVelocity >= (originalVelocity - offsetAmount)), f"Offset velocity is not within {offsetAmount} ticks of original velocity. Original velocity: {originalVelocity}, offset velocity: {offsetVelocity}"
+    print(f"As expected, velocities of offsetNoteAtt are within {offsetAmount} ticks of originalNoteAtt.")
+
+    track = offsetNoteAtt.toMidiTrack()
+    mid.tracks[0] = track
+    mid.save(OFFSET_VELOCITY_OUT)
+    print(f"test_randomly_offset_velocities output must be inspected manually.")
+
 
 if __name__ == '__main__':
     clearOutputDir(OUTPUT_DIR)
@@ -129,3 +178,5 @@ if __name__ == '__main__':
     test_merge_absolute_time_tracks()
     test_merge_absolute_time_tracks_one_empty()
     test_get_note_messages_abs_track()
+    test_randomly_offset_time()
+    test_randomly_offset_velocities()
