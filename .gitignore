@@ -7,5 +7,6 @@ venv
 tests/testData/augOutput/*
 tests/testData/absTrackOutput/*
 tests/testData/toolsOutput/*
+tests/testData/augExamplesOutput/*
 
 midiUtils/data

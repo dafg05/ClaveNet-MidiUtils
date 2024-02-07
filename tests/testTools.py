@@ -70,7 +70,7 @@ def test_allMessagesToChannel():
     print("allMessagesToChannel passed")
 
 if __name__ == "__main__":
-    clearDir(OUTPUT_DIR)
+    clearOutputDir(OUTPUT_DIR)
 
     test_isTrackEmpty()
     test_mergeMultipleTracks()

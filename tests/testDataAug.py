@@ -1,45 +1,87 @@
 import random
+import numpy as np
+import mido
+from collections import Counter
 
 from tests.constants import *
 from tests.utils import *
 
 from midiUtils import dataAug
+from midiUtils.constants import PERC_VOICES_MAPPING
+from midiUtils.augExamples import SeedExamplesRetriever
 
 SOURCE_DIR = f'{TEST_DATA_DIR}/augSource'
+MIDI_TO_TRANSFORM = f'{SOURCE_DIR}/rock_testbeat.mid'
 OUTPUT_DIR = f'{TEST_DATA_DIR}/augOutput'
 EXAMPLES_DIR = f'{TEST_DATA_DIR}/examples'
 FIXED_VOICES_TO_REPLACE = ["kick", "sna"]
 
-def testAugScheme_InStyle():
+MIDO_MID = mido.MidiFile(MIDI_TO_TRANSFORM)
+SER = SeedExamplesRetriever(EXAMPLES_DIR)
+RNG = np.random.default_rng(SEED)
+NUM_REPLACEMENTS = 2
+TRACK_INDEX = 0
+
+def testTransformMidiFile_inStyle():
     print("///////////////////////////////////////////////")
-    print("Testing augmentationScheme with inStyle...")
+    print("Testing transformMidiFile inStyle...")
 
-    styleParams = {"preferredStyle": "songo", "outOfStyleProb": 0.0}
-    suffix = '_inStyle'
-    dataAug.augmentationScheme(SOURCE_DIR, OUTPUT_DIR, EXAMPLES_DIR, styleParams, suffix=suffix ,numTransformations = 2, fixedVoicesToReplace = FIXED_VOICES_TO_REPLACE, random_seed=SEED, debug=True)
-    print(f"Output files written with suffix {suffix} in the directory {OUTPUT_DIR}")
-    
-def testAugScheme_OutOfStyle():
+    preferredStyle = 'songo'
+    outOfStyleProb = 0.0
+    newMid = dataAug.transformMidiFile(MIDO_MID, TRACK_INDEX, NUM_REPLACEMENTS, SER, RNG, preferredStyle, outOfStyleProb, debug=True)
+    newMid.save(f"{OUTPUT_DIR}/rock_testbeat_transf_inStyle.mid")
+    print(f"Output file written to {OUTPUT_DIR}")
+
+def testTransformMidiFile_outOfStyle():
     print("///////////////////////////////////////////////")
-    print("Testing augmentationScheme with outOfStyle...")
+    print("Testing transformMidiFile outOfStyle...")
 
-    styleParams = {"preferredStyle": "songo", "outOfStyleProb": 1.0}
-    suffix = '_outOfStyle'
-    dataAug.augmentationScheme(SOURCE_DIR, OUTPUT_DIR, EXAMPLES_DIR, styleParams, suffix=suffix, numTransformations = 2, fixedVoicesToReplace = FIXED_VOICES_TO_REPLACE, random_seed=SEED,debug=True)
-    print(f"Output files written with suffix {suffix} in the directory {OUTPUT_DIR}")
+    preferredStyle = 'songo'
+    outOfStyleProb = 1.0
+    newMid = dataAug.transformMidiFile(MIDO_MID, TRACK_INDEX, NUM_REPLACEMENTS, SER, RNG, preferredStyle, outOfStyleProb, debug=True)
+    newMid.save(f"{OUTPUT_DIR}/rock_testbeat_transf_outOfStyle.mid")
+    print(f"Output file written to {OUTPUT_DIR}")
 
-def testAugScheme_WithOutOfStyleProb():
+def testTransformMidiFile_withOutOfStyleProb():
     print("///////////////////////////////////////////////")
-    print("Testing augmentationScheme with outOfStyleProb...")
+    print("Testing transformMidiFile with outOfStyleProb...")
 
-    styleParams = {"preferredStyle": "songo", "outOfStyleProb": 0.5}
-    suffix = '_withOutOfStyleProb'
-    dataAug.augmentationScheme(SOURCE_DIR, OUTPUT_DIR, EXAMPLES_DIR, styleParams, suffix=suffix, numTransformations = 2, numReplacements=2, random_seed=SEED,debug=True)
-    print(f"Output files written with suffix {suffix} in the directory {OUTPUT_DIR}")
+    preferredStyle = 'songo'
+    outOfStyleProb = 0.2
+    newMid = dataAug.transformMidiFile(MIDO_MID, TRACK_INDEX, NUM_REPLACEMENTS, SER, RNG, preferredStyle, outOfStyleProb, debug=True)
+    newMid.save(f"{OUTPUT_DIR}/rock_testbeat_transf_withOutOfStyleProb.mid")
+    print(f"Output file written to {OUTPUT_DIR}")
 
+
+def testTransformMidiFile_tooManyReplacements():
+    print("///////////////////////////////////////////////")
+    print("Testing transformMidiFile with many replacements...")
+
+    numReplacements = 10
+    try:
+        newMid = dataAug.transformMidiFile(MIDO_MID, TRACK_INDEX, numReplacements, SER, RNG, debug=True)
+    except ValueError as e:
+        print(f"Caught expected exception: {e}")
+
+def testTransformMidiFile_exhaustCandidates():
+    print("///////////////////////////////////////////////")
+    print("Testing transformMidiFile when exhausting candidates...")
+
+    preferredStyle = 'songo'
+    outOfStyleProb = 0.2
+    numReplacements = len(PERC_VOICES_MAPPING.keys())
+    newMid = dataAug.transformMidiFile(MIDO_MID, TRACK_INDEX, numReplacements, SER, RNG, preferredStyle, outOfStyleProb, debug=True)
+    newMid.save(f"{OUTPUT_DIR}/rock_testbeat_transf_exhaustCandidates.mid")
+    print("We expect the messages: 'Ran out of candidate tracks without repeating voices.' and 'Completely ran out of candidate tracks.' in the output.")
+    print(f"Output file written to {OUTPUT_DIR}.")
+ 
 if __name__ == '__main__':
-    clearDir(OUTPUT_DIR)
+    clearOutputDir(OUTPUT_DIR)
 
-    testAugScheme_InStyle()
-    testAugScheme_OutOfStyle()
-    testAugScheme_WithOutOfStyleProb()
+    testTransformMidiFile_inStyle()
+    testTransformMidiFile_outOfStyle()
+    testTransformMidiFile_withOutOfStyleProb()
+    testTransformMidiFile_tooManyReplacements()
+    testTransformMidiFile_exhaustCandidates()
+
+    synthesizeOutputDir(OUTPUT_DIR)

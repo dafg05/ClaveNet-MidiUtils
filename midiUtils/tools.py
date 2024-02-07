@@ -5,20 +5,6 @@ from midiUtils.absTrack import AbsoluteTimeTrack
 import mido
 import copy
 
-def getPitches(percVoice: str) -> list:
-    """
-    Returns a list of pitches that correspond to the given percVoice
-    """
-    if percVoice == "sna":
-        return SNA_NOTES
-    if percVoice == "toms":
-        return TOM_NOTES
-    if percVoice == "kick":
-        return KICK_NOTES
-    if percVoice == "cym":
-        return CYM_NOTES
-    return []
-
 def isTrackEmpty(track : mido.MidiTrack):
     """
     Returns true if the track is empty, aka if it has any note on messages.
