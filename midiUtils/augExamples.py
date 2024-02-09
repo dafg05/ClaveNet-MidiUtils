@@ -25,7 +25,7 @@ class AugSeedExample:
                 voices.append(v)
         return voices
 
-    def __getVoiceTrack(self, voice) -> mido.MidiTrack():
+    def __getVoiceTrack(self, voice) -> mido.MidiTrack:
         """
         Returns a midi track that contains only the specified voice
         """
@@ -35,7 +35,7 @@ class AugSeedExample:
     
         return tools.getTrackWithSelectPitches(track, pitches, notesOnly=True)
 
-    def getVoice(self, voice) -> mido.MidiTrack():
+    def getVoice(self, voice) -> mido.MidiTrack:
         """
         Returns a midi track that contains only the specified voice
         """
