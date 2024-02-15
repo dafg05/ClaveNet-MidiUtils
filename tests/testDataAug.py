@@ -28,9 +28,11 @@ def testTransformMidiFile_inStyle():
 
     preferredStyle = 'songo'
     outOfStyleProb = 0.0
-    newMid = dataAug.transformMidiFile(MIDO_MID, TRACK_INDEX, NUM_REPLACEMENTS, SER, RNG, preferredStyle, outOfStyleProb, debug=True)
+    newMid, replacementInfo = dataAug.transformMidiFile(MIDO_MID, TRACK_INDEX, NUM_REPLACEMENTS, SER, RNG, preferredStyle, outOfStyleProb, debug=True)
+    assert NUM_REPLACEMENTS == len(replacementInfo), f"Expected {NUM_REPLACEMENTS} replacements, got {len(replacementInfo)}."
     newMid.save(f"{OUTPUT_DIR}/rock_testbeat_transf_inStyle.mid")
     print(f"Output file written to {OUTPUT_DIR}")
+    print(f"Replacement info: {replacementInfo}")
 
 def testTransformMidiFile_outOfStyle():
     print("///////////////////////////////////////////////")
@@ -38,9 +40,11 @@ def testTransformMidiFile_outOfStyle():
 
     preferredStyle = 'songo'
     outOfStyleProb = 1.0
-    newMid = dataAug.transformMidiFile(MIDO_MID, TRACK_INDEX, NUM_REPLACEMENTS, SER, RNG, preferredStyle, outOfStyleProb, debug=True)
+    newMid, replacementInfo = dataAug.transformMidiFile(MIDO_MID, TRACK_INDEX, NUM_REPLACEMENTS, SER, RNG, preferredStyle, outOfStyleProb, debug=True)
+    assert NUM_REPLACEMENTS == len(replacementInfo), f"Expected {NUM_REPLACEMENTS} replacements, got {len(replacementInfo)}."
     newMid.save(f"{OUTPUT_DIR}/rock_testbeat_transf_outOfStyle.mid")
     print(f"Output file written to {OUTPUT_DIR}")
+    print(f"Replacement info: {replacementInfo}")
 
 def testTransformMidiFile_withOutOfStyleProb():
     print("///////////////////////////////////////////////")
@@ -48,10 +52,11 @@ def testTransformMidiFile_withOutOfStyleProb():
 
     preferredStyle = 'songo'
     outOfStyleProb = 0.2
-    newMid = dataAug.transformMidiFile(MIDO_MID, TRACK_INDEX, NUM_REPLACEMENTS, SER, RNG, preferredStyle, outOfStyleProb, debug=True)
+    newMid, replacementInfo = dataAug.transformMidiFile(MIDO_MID, TRACK_INDEX, NUM_REPLACEMENTS, SER, RNG, preferredStyle, outOfStyleProb, debug=True)
+    assert NUM_REPLACEMENTS == len(replacementInfo), f"Expected {NUM_REPLACEMENTS} replacements, got {len(replacementInfo)}."
     newMid.save(f"{OUTPUT_DIR}/rock_testbeat_transf_withOutOfStyleProb.mid")
     print(f"Output file written to {OUTPUT_DIR}")
-
+    print(f"Replacement info: {replacementInfo}")
 
 def testTransformMidiFile_tooManyReplacements():
     print("///////////////////////////////////////////////")
@@ -59,7 +64,7 @@ def testTransformMidiFile_tooManyReplacements():
 
     numReplacements = 10
     try:
-        newMid = dataAug.transformMidiFile(MIDO_MID, TRACK_INDEX, numReplacements, SER, RNG, debug=True)
+        newMid, _ = dataAug.transformMidiFile(MIDO_MID, TRACK_INDEX, numReplacements, SER, RNG, debug=True)
     except ValueError as e:
         print(f"Caught expected exception: {e}")
 
@@ -70,10 +75,11 @@ def testTransformMidiFile_exhaustCandidates():
     preferredStyle = 'songo'
     outOfStyleProb = 0.2
     numReplacements = len(PERC_VOICES_MAPPING.keys())
-    newMid = dataAug.transformMidiFile(MIDO_MID, TRACK_INDEX, numReplacements, SER, RNG, preferredStyle, outOfStyleProb, debug=True)
+    newMid, replacementInfo = dataAug.transformMidiFile(MIDO_MID, TRACK_INDEX, numReplacements, SER, RNG, preferredStyle, outOfStyleProb, debug=True)
     newMid.save(f"{OUTPUT_DIR}/rock_testbeat_transf_exhaustCandidates.mid")
     print("We expect the messages: 'Ran out of candidate tracks without repeating voices.' and 'Completely ran out of candidate tracks.' in the output.")
     print(f"Output file written to {OUTPUT_DIR}.")
+    print(f"Replacement info: {replacementInfo}")
  
 if __name__ == '__main__':
     clearOutputDir(OUTPUT_DIR)
