@@ -51,6 +51,9 @@ def trimMidiTrack(track: mido.MidiTrack, startBar: int, endBar: int, beatsPerBar
 
     startTime = startBar * beatsPerBar * ticksPerBeat
     endTime = endBar * beatsPerBar * ticksPerBeat
+
+    if startTime == 0:
+        return helpers.getMidiSlice(track, startTime, endTime)
     return helpers.getMidiSlice(track, startTime, endTime, metaData)
 
 def allMessagesToChannel(track: mido.MidiTrack, channel: int) -> mido.MidiTrack:
