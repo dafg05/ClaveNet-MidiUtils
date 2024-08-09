@@ -10,10 +10,11 @@ from midiUtils import dataAug
 from midiUtils.constants import PERC_VOICES_MAPPING
 from midiUtils.augExamples import SeedExamplesRetriever
 
-SOURCE_DIR = f'{TEST_DATA_DIR}/augSource'
-MIDI_TO_TRANSFORM = f'{SOURCE_DIR}/rock_testbeat.mid'
-OUTPUT_DIR = f'{TEST_DATA_DIR}/augOutput'
-EXAMPLES_DIR = f'{TEST_DATA_DIR}/examples'
+SOURCE_DIR = TEST_DATA_DIR / "dataAug"
+OUTPUT_DIR = TEST_OUT_DIR / "dataAug"
+
+MIDI_TO_TRANSFORM = SOURCE_DIR / "rock_testbeat.mid"
+EXAMPLES_DIR = TEST_DATA_DIR / "examples"
 FIXED_VOICES_TO_REPLACE = ["kick", "sna"]
 
 MIDO_MID = mido.MidiFile(MIDI_TO_TRANSFORM)

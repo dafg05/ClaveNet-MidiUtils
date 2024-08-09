@@ -5,12 +5,12 @@ from midiUtils.augExamples import SeedExamplesRetriever, AugSeedExample
 
 import mido
 
-EXAMPLES_DIR = TEST_DATA_DIR + "/examples"
-OUTPUT_DIR = TEST_DATA_DIR + "/augExamplesOutput"
-AUG_EXAMPLE_PATH = EXAMPLES_DIR + '/songo_kit.mid'
+EXAMPLES_DIR = TEST_DATA_DIR / "examples"
+OUTPUT_DIR = TEST_OUT_DIR / "augExamples"
+AUG_EXAMPLE_PATH = EXAMPLES_DIR / "songo_kit.mid"
 AUG_EXAMPLE_STYLE = 'songo'
 STYLES = ['songo', 'mambo']
-TEST_TRACK_PATH = OUTPUT_DIR + '/testTrack.mid'
+TEST_TRACK_PATH = OUTPUT_DIR / "testTrack.mid"
 SER = SeedExamplesRetriever(EXAMPLES_DIR)
 
 def test_example():

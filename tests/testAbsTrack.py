@@ -7,19 +7,19 @@ from midiUtils.absTrack import AbsoluteTimeTrack, AbsoluteTimeMidiMessage
 import mido
 import random
 
-SOURCE_DIR = f'{TEST_DATA_DIR}/absTrackSource'
-OUTPUT_DIR = f'{TEST_DATA_DIR}/absTrackOutput'
+SOURCE_DIR = TEST_DATA_DIR / "absTrack"
+OUTPUT_DIR = TEST_OUT_DIR / "absTrack"
 
-MIDI_FILE = SOURCE_DIR + "/1_rock_110_beat_4-4_slice_208.mid"
-EXCLUDE_OUT = OUTPUT_DIR + "/exclude_pitches.mid"
-INCLUDE_OUT = OUTPUT_DIR + "/include_pitches.mid"
-MERGEE_1 = SOURCE_DIR + "/mergee1.mid"
-MERGEE_2 = SOURCE_DIR + "/mergee2.mid"
-MERGEE_3 = SOURCE_DIR + "/mergee3.mid"
-SIMPLE_MERGED_OUT = OUTPUT_DIR + "/merged_simple.mid"
-MULTIPLE_MERGED_OUT = OUTPUT_DIR + "/merged_multiple.mid"
-OFFSET_TIME_OUT = OUTPUT_DIR + "/offset_time.mid"
-OFFSET_VELOCITY_OUT = OUTPUT_DIR + "/offset_velocity.mid"
+MIDI_FILE = SOURCE_DIR / "1_rock_110_beat_4-4_slice_208.mid"
+EXCLUDE_OUT = OUTPUT_DIR / "exclude_pitches.mid"
+INCLUDE_OUT = OUTPUT_DIR / "include_pitches.mid"
+MERGEE_1 = SOURCE_DIR / "mergee1.mid"
+MERGEE_2 = SOURCE_DIR / "mergee2.mid"
+MERGEE_3 = SOURCE_DIR / "mergee3.mid"
+SIMPLE_MERGED_OUT = OUTPUT_DIR / "merged_simple.mid"
+MULTIPLE_MERGED_OUT = OUTPUT_DIR / "merged_multiple.mid"
+OFFSET_TIME_OUT = OUTPUT_DIR / "offset_time.mid"
+OFFSET_VELOCITY_OUT = OUTPUT_DIR / "offset_velocity.mid"
 
 TEST_PITCHES = [36,44] # kick and hihat foot close
 

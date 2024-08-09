@@ -4,13 +4,14 @@ from tests.utils import *
 from midiUtils.tools import *
 
 import mido
-SOURCE_DIR = TEST_DATA_DIR + '/toolsSource'
-OUTPUT_DIR = TEST_DATA_DIR + '/toolsOutput'
 
-MERGEE_1 = SOURCE_DIR + '/mergee1.mid'
-MERGEE_2 = SOURCE_DIR + '/mergee2.mid'
-MERGEE_3 = SOURCE_DIR + '/mergee3.mid'
-TO_TRIM = SOURCE_DIR + '/toTrim.mid'
+SOURCE_DIR = TEST_DATA_DIR / "tools"
+OUTPUT_DIR = TEST_OUT_DIR / "tools"
+
+MERGEE_1 = SOURCE_DIR / 'mergee1.mid'
+MERGEE_2 = SOURCE_DIR / 'mergee2.mid'
+MERGEE_3 = SOURCE_DIR / 'mergee3.mid'
+TO_TRIM = SOURCE_DIR / 'toTrim.mid'
 
 def test_isTrackEmpty():
     print("///////////////////////////////////////////////")
@@ -39,7 +40,7 @@ def test_mergeMultipleTracks():
     mergedTrack = mergeMultipleTracks(trackWithMetaData=track1, noteTracks=noteTracks)
     
     mid1.tracks[0] = mergedTrack
-    mid1.save(OUTPUT_DIR + '/merged.mid')
+    mid1.save(OUTPUT_DIR / 'merged.mid')
     print(f"Saved to {OUTPUT_DIR}/merged.mid")
 
 def test_trimMidiTrack():
@@ -52,7 +53,7 @@ def test_trimMidiTrack():
     trimmedTrack = trimMidiTrack(track=track, startBar=1, endBar=2, beatsPerBar=4, ticksPerBeat=mid.ticks_per_beat)
 
     mid.tracks[0] = trimmedTrack
-    mid.save(OUTPUT_DIR + '/trimmed.mid')
+    mid.save(OUTPUT_DIR / 'trimmed.mid')
     print(f"Saved to {OUTPUT_DIR}/trimmed.mid")
 
 def test_allMessagesToChannel():

@@ -1,6 +1,8 @@
 import os
+from pathlib import Path
 
-currentDir = os.path.dirname(__file__)
+baseDir = Path(__file__).parent
 
-TEST_DATA_DIR = f"{currentDir}/testData"
+TEST_DATA_DIR = baseDir / "data"
+TEST_OUT_DIR = baseDir / "out"
 SEED = 2
