@@ -1,4 +1,4 @@
-# MIDI UTILS
+# ClaveNet-MidiUtils
 
 A variety of midi manipulation utilities for the drum generator.
 
