@@ -2,7 +2,7 @@
 
 A variety of midi manipulation utilities for the drum generator. 
 
-[A visualization of the MIDI drum data data augmentation with seed patterns algorithm. ](assets/teaser-figure.png)
+![A visualization of the MIDI drum data data augmentation with seed patterns algorithm. ](assets/teaser-figure.png)
 
 ## Usage
 
